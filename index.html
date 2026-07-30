@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACIDRATCHET TD-3-MO Pattern Translator V3</title>
+<style>
+:root{--bg:#080a09;--panel:#121713;--line:#354038;--lime:#b7ff28;--text:#f4f6ef;--muted:#aab2aa;--red:#ff665e;--amber:#ffc857}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#19231b,#080a09 38%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:1px solid #3a453d;background:#1a211c;color:var(--text);border-radius:9px;padding:9px 11px}
+button:hover{border-color:#718274}button.primary{background:linear-gradient(#c3ff48,#83dc16);color:#071000;border-color:#d5ff85;font-weight:800}
+.app{min-height:100vh;display:grid;grid-template-columns:290px 1fr}.side{position:sticky;top:0;height:100vh;overflow:auto;padding:20px;border-right:1px solid #2a312b;background:#0c100df5}
+.brand{color:var(--lime);font-size:21px;font-weight:900;line-height:1.05}.sub{font-size:12px;color:var(--muted);margin:8px 0 18px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}.search{width:100%;margin-top:10px;padding:10px;background:#080b09;border:1px solid var(--line);border-radius:8px;color:var(--text)}
+.lib{display:flex;flex-direction:column;gap:7px;margin-top:13px}.item{text-align:left;background:#121713}.item.active{border-color:var(--lime);box-shadow:0 0 18px #8ee81725}.item b,.item small{display:block}.item small{color:var(--muted)}
+.main{padding:22px;min-width:0}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.top h1{font-size:22px;margin:0}.status{font-size:12px;color:var(--lime)}
+.card{background:linear-gradient(#171d18,#101411);border:1px solid #303a32;border-radius:14px;padding:15px;margin-bottom:14px;box-shadow:0 15px 45px #0007}.card h2{font-size:15px;margin:0 0 12px}
+.meta{display:grid;grid-template-columns:2fr 1.4fr .7fr .7fr .7fr;gap:9px}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:9px;background:#080b09;color:var(--text);border:1px solid var(--line);border-radius:8px}.field textarea{min-height:65px}
+.quick{display:grid;grid-template-columns:1fr auto;gap:9px}.help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}kbd{background:#242b25;border:1px solid #4c584e;border-radius:4px;padding:1px 5px}
+.stepsbar{display:flex;justify-content:space-between;gap:10px;align-items:center}.steps{display:grid;grid-template-columns:repeat(8,minmax(110px,1fr));gap:8px;margin-top:12px}.step{position:relative;padding:9px;border:1px solid #344036;border-top:3px solid #77d715;border-radius:10px;background:#121713}.step.rest{border-top-color:var(--red)}.step.tie{border-top-color:var(--amber)}.num{position:absolute;right:8px;top:5px;color:#626d64;font-weight:800;font-size:11px}
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:16px 0 7px}.types button,.oct button,.mods button{padding:5px 2px;font-size:10px;border-radius:6px}.types .on{background:var(--lime);color:#071000}.step.rest .types .on{background:var(--red)}.step.tie .types .on{background:var(--amber)}
+.step select{width:100%;background:#080b09;color:var(--text);border:1px solid var(--line);padding:6px;border-radius:6px}.oct{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:6px}.mods{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:6px}.oct .on,.mods .on{background:#3c5734;border-color:#7fb967}.mods .accent.on{background:#6b5221;border-color:var(--amber)}.mods .slide.on{background:#24536b;border-color:#66c9ff}.disabled{opacity:.28;pointer-events:none}
+.tabs,.actions{display:flex;gap:7px;flex-wrap:wrap}.tab.active{background:var(--lime);color:#071000;font-weight:800}.pane{display:none;margin-top:12px}.pane.active{display:block}.section{border-left:3px solid #526255;background:#0b0f0c;border-radius:0 9px 9px 0;padding:12px;margin:10px 0}.section h3{color:var(--lime);font-size:13px;margin:0 0 7px}.section ol,.section ul{line-height:1.55;padding-left:22px}.chips{line-height:1.8}.chip{display:inline-block;padding:3px 7px;margin:2px;border:1px solid #536252;border-radius:6px;font-size:12px}.warn{background:#251e0f;border:1px solid #6a5627;color:#ffe2a0;padding:9px;border-radius:8px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px;border-bottom:1px solid #303a32;font-size:12px}th{color:var(--lime)}.json{min-height:260px;font-family:ui-monospace,monospace;font-size:12px}.actions{margin-top:13px}.danger{color:#ffb4b7;border-color:#704044}
+.modal{display:none;position:fixed;inset:0;background:#000c;place-items:center;padding:18px}.modal.open{display:grid}.modalbox{width:min(700px,100%);background:#111612;border:1px solid #455248;border-radius:14px;padding:16px}.modal textarea{width:100%;min-height:280px;background:#070907;color:#dfffcf;border:1px solid #455248;border-radius:8px;padding:10px}
+@media(max-width:1050px){.steps{grid-template-columns:repeat(4,minmax(110px,1fr))}.meta{grid-template-columns:2fr 1.3fr repeat(3,.7fr)}}
+@media(max-width:730px){.app{display:block}.side{position:relative;height:auto;border-right:0}.lib{display:grid;grid-template-columns:1fr 1fr;max-height:210px;overflow:auto}.main{padding:12px}.meta{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}.quick{grid-template-columns:1fr}.steps{display:flex;overflow-x:auto}.step{min-width:150px}}
+
+/* Pattern Preview Player */
+.player{background:linear-gradient(145deg,#0c100d,#171d18);border-color:#4a594d}
+.player-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.transport{display:flex;gap:8px;align-items:center}
+.playbtn{min-width:108px;font-weight:900}
+.playbtn.running{background:#ff5f63;color:#220000;border-color:#ff989b}
+.engine-state{font-size:11px;color:var(--muted)}
+.player-grid{display:grid;grid-template-columns:1.1fr repeat(6,minmax(90px,1fr));gap:10px;align-items:end}
+.knob-field label{display:flex;justify-content:space-between;gap:6px;color:var(--muted);font-size:11px;margin-bottom:6px}
+.knob-field output{color:var(--lime);font-variant-numeric:tabular-nums}
+.knob-field input[type=range]{width:100%;accent-color:var(--lime)}
+.player select,.player input[type=number]{width:100%;background:#080b09;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}
+.meter{height:8px;border-radius:999px;background:#060806;border:1px solid #2d372f;overflow:hidden;margin-top:12px}
+.meter>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5da90e,#b7ff28,#ffc857);transition:width .06s linear}
+.step.playing{box-shadow:0 0 0 2px var(--lime),0 0 28px #a8ff304d;transform:translateY(-2px)}
+.player-note{margin-top:9px;font-size:11px;color:#8f9a91}
+@media(max-width:1100px){.player-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:730px){.player-grid{grid-template-columns:1fr 1fr}.player-top{align-items:flex-start;flex-direction:column}}
+
+
+/* PDF / Print */
+#printRoot{display:none}
+.print-doc{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#151a16;max-width:190mm;margin:0 auto}
+.print-head{border-bottom:3px solid #80c916;padding-bottom:7mm;margin-bottom:7mm}
+.print-head h1{margin:0;font-size:22pt;letter-spacing:.3px}
+.print-head .brandline{color:#4f8e00;font-weight:800;font-size:10pt;margin-bottom:2mm}
+.print-meta{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3mm;margin-top:4mm;font-size:9.5pt}
+.print-meta div{border:1px solid #b8c0b9;border-radius:2mm;padding:2.2mm}
+.print-doc .section{background:#fff;color:#151a16;border-left:3px solid #75b819;box-shadow:none;margin:4mm 0;padding:3mm 4mm;break-inside:avoid}
+.print-doc .section h3{color:#4f8e00;font-size:11pt}
+.print-doc .help{color:#465047;font-size:9pt}
+.print-doc .chip{color:#151a16;background:#f5f8f2;border-color:#9faa9f}
+.print-doc table{color:#151a16}
+.print-doc th{color:#4f8e00;background:#edf5e4}
+.print-doc th,.print-doc td{border:1px solid #c8cec8;padding:2.2mm;font-size:9pt}
+.print-footer{margin-top:6mm;padding-top:3mm;border-top:1px solid #c7cec8;color:#687069;font-size:8pt}
+@page{size:A4 portrait;margin:12mm}
+@media print{
+  html,body{background:#fff!important}
+  body.printing .app,body.printing .modal{display:none!important}
+  body.printing #printRoot{display:block!important}
+  body.printing *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+body.printing{background:#fff}
+body.printing .app,body.printing .modal{display:none}
+body.printing #printRoot{display:block;padding:10mm}
+
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+<div class="brand">ACIDRATCHET<br>TD‑3‑MO TRANSLATOR <small style="font-size:10px;color:#91a18f">V3</small></div>
+<div class="sub">Patterns speichern, verstehen und ohne Tutorial wieder in die Hardware eingeben.</div>
+<div class="tools"><button class="primary" id="new">+ Neu</button><button id="dup">Duplizieren</button></div>
+<input class="search" id="search" placeholder="Pattern suchen …">
+<div class="lib" id="lib"></div>
+<div class="sub" style="border-top:1px solid #29312a;padding-top:14px">Speichert lokal im Browser. JSON dient nur als Backup oder zum Übertragen.</div>
+</aside>
+<main class="main">
+<div class="top"><h1 id="title">Pattern</h1><span class="status" id="status">gespeichert</span></div>
+
+<section class="card">
+<h2>Pattern-Daten</h2>
+<div class="meta">
+<div class="field wide"><label>Eintragsname</label><input id="name"></div>
+<div class="field wide"><label>Song / Quelle</label><input id="source" placeholder="z. B. Emmanuel Top – Turkish Bazar"></div>
+<div class="field"><label>Gruppe</label><select id="group"><option>I</option><option>II</option><option>III</option><option>IV</option></select></div>
+<div class="field"><label>Pattern</label><select id="slot"></select></div>
+<div class="field"><label>Bank</label><select id="bank"><option>A</option><option>B</option></select></div>
+</div>
+<div class="field" style="margin-top:9px"><label>Notiz</label><textarea id="notes"></textarea></div>
+</section>
+
+<section class="card">
+<h2>Schnelleingabe</h2>
+<div class="quick"><div class="field"><label>Tokens mit Leerzeichen trennen</label><input id="quick" placeholder="C C C C# C C C C#^S …"></div><button class="primary" id="apply">Übernehmen</button></div>
+<div class="help"><kbd>C</kbd> Note · <kbd>C#^</kbd> Oktave hoch · <kbd>Cv</kbd> Oktave runter · <kbd>C#^A</kbd> Accent · <kbd>C#^S</kbd> Slide · <kbd>C#^AS</kbd> beides · <kbd>R</kbd> Pause · <kbd>T</kbd> Bindung · <kbd>C'</kbd> rechte hohe C-Taste.</div>
+</section>
+
+
+<section class="card player">
+  <div class="player-top">
+    <div>
+      <h2 style="margin-bottom:3px">Pattern Preview · ACIDRATCHET Preview Core V3</h2>
+      <div class="engine-state" id="engineState">bereit · geglättete monophone Voice · NOTE / REST / TIE / ACCENT / SLIDE</div>
+    </div>
+    <div class="transport">
+      <button class="primary playbtn" id="previewPlay">▶ PLAY</button>
+      <button id="previewRestart">↺ Neustart</button>
+    </div>
+  </div>
+
+  <div class="player-grid">
+    <div class="field">
+      <label>BPM</label>
+      <input id="previewBpm" type="number" min="60" max="200" value="126">
+    </div>
+    <div class="field">
+      <label>Wellenform</label>
+      <select id="previewWave"><option value="sawtooth">SAW</option><option value="square">SQUARE</option></select>
+    </div>
+    <div class="knob-field">
+      <label><span>CUTOFF</span><output id="cutoffOut">58</output></label>
+      <input id="previewCutoff" type="range" min="0" max="100" value="58">
+    </div>
+    <div class="knob-field">
+      <label><span>RESONANCE</span><output id="resoOut">68</output></label>
+      <input id="previewReso" type="range" min="0" max="100" value="68">
+    </div>
+    <div class="knob-field">
+      <label><span>ENV MOD</span><output id="envOut">72</output></label>
+      <input id="previewEnv" type="range" min="0" max="100" value="72">
+    </div>
+    <div class="knob-field">
+      <label><span>DECAY</span><output id="decayOut">44</output></label>
+      <input id="previewDecay" type="range" min="0" max="100" value="44">
+    </div>
+    <div class="knob-field">
+      <label><span>ACCENT</span><output id="accentOut">70</output></label>
+      <input id="previewAccent" type="range" min="0" max="100" value="70">
+    </div>
+    <div class="knob-field">
+      <label><span>DRIVE</span><output id="driveOut">32</output></label>
+      <input id="previewDrive" type="range" min="0" max="100" value="32">
+    </div>
+  </div>
+  <div class="meter"><i id="previewMeter"></i></div>
+  <div class="player-note">Browser-Audio startet erst nach Klick auf PLAY. Kopfhörerlautstärke zunächst niedrig einstellen.</div>
+</section>
+
+<section class="card">
+<div class="stepsbar"><div><h2 style="margin-bottom:3px">Step-Editor</h2><div class="help" style="margin:0">Accent und Slide gehören zur Note. Pause und Bindung erzeugen keine neue Tonhöhe.</div></div><div class="field"><label>Länge</label><select id="length"></select></div></div>
+<div class="steps" id="steps"></div>
+</section>
+
+<section class="card">
+<div class="tabs"><button class="tab active" data-tab="guide">Hardware-Anleitung</button><button class="tab" data-tab="sheet">Pattern-Sheet</button><button class="tab" data-tab="json">JSON</button></div>
+<div class="pane active" id="guidePane"></div>
+<div class="pane" id="sheetPane"></div>
+<div class="pane" id="jsonPane"><div class="field"><label>Aktuelles Pattern</label><textarea class="json" id="json" readonly></textarea></div></div>
+<div class="actions"><button class="primary" id="printGuide">Anleitung PDF / Drucken</button><button id="printSheet">Pattern-Sheet PDF / Drucken</button><button id="copyGuide">Anleitung kopieren</button><button id="copyJson">JSON kopieren</button><button id="export">Bibliothek sichern</button><button id="import">JSON importieren</button><button class="danger" id="del">Löschen</button></div>
+</section>
+</main>
+</div>
+
+<div id="printRoot"></div>
+
+<div class="modal" id="modal"><div class="modalbox"><h2>JSON importieren</h2><textarea id="importText"></textarea><div class="actions"><button class="primary" id="confirmImport">Importieren</button><button id="cancelImport">Abbrechen</button></div></div></div>
+
+<script>
+(()=>{'use strict';
+const K='acidratchet_td3mo_library_v1', $=id=>document.getElementById(id);
+const KEYS=[['C1','C (links)','C'],['Cs','C#','C#'],['D','D','D'],['Ds','D#','D#'],['E','E','E'],['F','F','F'],['Fs','F#','F#'],['G','G','G'],['Gs','G#','G#'],['A','A','A'],['As','A#','A#'],['B','B','B'],['C2',"C (rechts)","C'"]].map(x=>({v:x[0],l:x[1],t:x[2]}));
+const uid=()=>`p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;
+const step=()=>({type:'note',key:'C1',octave:0,accent:false,slide:false});
+const blank=()=>({id:uid(),name:'Neues Pattern',source:'',group:'I',slot:1,bank:'A',notes:'',length:16,steps:Array.from({length:16},step),updatedAt:new Date().toISOString()});
+const sample=()=>{let p=blank();p.id='turkish_bazar';p.name='Turkish Bazar – Basis';p.source='Emmanuel Top – Turkish Bazar';p.group='IV';p.slot=8;p.bank='B';[3,7,11,15].forEach(i=>p.steps[i].key='Cs');p.steps[7].octave=1;p.steps[7].slide=true;p.steps[15].octave=1;p.steps[15].accent=true;p.steps[15].slide=true;p.notes='Step 8: C# hoch + Slide. Step 16: C# hoch + Accent + Slide.';return p};
+let st={patterns:[],id:null,filter:''},timer;
+function norm(p){p.length=Math.max(1,Math.min(16,+p.length||16));p.steps=Array.isArray(p.steps)?p.steps:[];while(p.steps.length<16)p.steps.push(step());p.steps=p.steps.slice(0,16).map(s=>({...step(),...s}));return p}
+function load(){try{let d=JSON.parse(localStorage.getItem(K));st.patterns=(d&&d.patterns)||[]}catch{}if(!st.patterns.length)st.patterns=[sample()];st.patterns=st.patterns.map(norm);st.id=st.patterns[0].id}
+const cur=()=>st.patterns.find(p=>p.id===st.id)||st.patterns[0];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(){clearTimeout(timer);$('status').textContent='speichert …';timer=setTimeout(()=>{localStorage.setItem(K,JSON.stringify({schema:'acidratchet.td3mo.pattern-library',version:1,patterns:st.patterns}));$('status').textContent='gespeichert'},160)}
+function touch(){cur().updatedAt=new Date().toISOString();save();renderLib();renderOut()}
+function ni(k){return KEYS.find(n=>n.v===k)||KEYS[0]}
+function action(s){let n=ni(s.key).l;return s.octave===1?`UP halten + ${n}`:s.octave===-1?`DOWN halten + ${n}`:n}
+function pitch(s){return ni(s.key).t+(s.octave===1?' ↑':s.octave===-1?' ↓':'')}
+function renderLib(){let q=st.filter.toLowerCase();$('lib').innerHTML=st.patterns.filter(p=>(p.name+' '+p.source+' '+p.notes).toLowerCase().includes(q)).map(p=>`<button class="item ${p.id===st.id?'active':''}" data-id="${p.id}"><b>${esc(p.name)}</b><small>${esc(p.source||'ohne Quelle')} · ${p.group}-${p.slot}${p.bank}</small></button>`).join('');document.querySelectorAll('.item').forEach(b=>b.onclick=()=>{st.id=b.dataset.id;render()})}
+function fill(){let p=cur();$('title').textContent=p.name;$('name').value=p.name;$('source').value=p.source;$('group').value=p.group;$('slot').value=p.slot;$('bank').value=p.bank;$('notes').value=p.notes;$('length').value=p.length}
+function stepHTML(s,i){return `<div class="step ${s.type}"><span class="num">${i+1}</span><div class="types"><button data-a="type" data-v="note" class="${s.type==='note'?'on':''}">NOTE</button><button data-a="type" data-v="rest" class="${s.type==='rest'?'on':''}">REST</button><button data-a="type" data-v="tie" class="${s.type==='tie'?'on':''}">TIE</button></div><div class="${s.type==='note'?'':'disabled'}"><select data-a="key">${KEYS.map(n=>`<option value="${n.v}" ${n.v===s.key?'selected':''}>${n.l}</option>`).join('')}</select><div class="oct"><button data-a="oct" data-v="-1" class="${s.octave===-1?'on':''}">DOWN</button><button data-a="oct" data-v="0" class="${s.octave===0?'on':''}">NORMAL</button><button data-a="oct" data-v="1" class="${s.octave===1?'on':''}">UP</button></div><div class="mods"><button data-a="accent" class="accent ${s.accent?'on':''}">ACCENT</button><button data-a="slide" class="slide ${s.slide?'on':''}">SLIDE</button></div></div></div>`}
+function renderSteps(){let p=cur();$('steps').innerHTML=p.steps.slice(0,p.length).map(stepHTML).join('');[...$('steps').children].forEach((box,i)=>box.querySelectorAll('[data-a]').forEach(el=>{let fn=()=>{let s=p.steps[i],a=el.dataset.a;if(a==='type')s.type=el.dataset.v;if(a==='key')s.key=el.value;if(a==='oct')s.octave=+el.dataset.v;if(a==='accent')s.accent=!s.accent;if(a==='slide')s.slide=!s.slide;renderSteps();touch()};el.tagName==='SELECT'?el.onchange=fn:el.onclick=fn}))}
+function guidePlain(p){let a=p.steps.slice(0,p.length),notes=a.map((s,i)=>({s,i})).filter(x=>x.s.type==='note'),mods=notes.map((x,i)=>({...x,n:i+1})).filter(x=>x.s.accent||x.s.slide);let t=`${p.name}
+Gruppe ${p.group} · Pattern ${p.slot}${p.bank} · ${p.length} Steps
+
+1 VORBEREITEN
+MODE: WRITE PATT. Gruppe ${p.group}. FUNCTION. Pattern ${p.slot}. Bank ${p.bank}. Pattern-Taste ${p.slot} halten + CLEAR.
+${p.length===16?'16 Steps sind Standard.':'FUNCTION halten + STEP '+p.length+'-mal.'}
+
+2 PITCH MODE
+`;notes.forEach((x,i)=>t+=`${i+1}. ${action(x.s)} (Zeit-Step ${x.i+1})
+`);t+=`
+3 TIME MODE
+Kleinen TIME-MODE-Knopf links neben BACK drücken.
+`;a.forEach((s,i)=>t+=`${i+1}. ${s.type==='note'?'NOTE / Taste 9':s.type==='tie'?'TIE / Taste 0':'REST / Taste 100'}
+`);t+=`
+4 ACCENT / SLIDE
+PITCH MODE. Mit WRITE/NEXT durchgehen. Beim Ziel WRITE/NEXT halten:
+`;mods.forEach(x=>t+=`Pitch-Note ${x.n} / Zeit-Step ${x.i+1}: ${x.s.accent?'ACCENT':''}${x.s.accent&&x.s.slide?' + ':''}${x.s.slide?'SLIDE':''}
+`);t+=`
+5 ABSPIELEN
+FUNCTION. MODE: PLAY PATT. Gruppe ${p.group}. Pattern ${p.slot}${p.bank}. START/STOP.`;return t}
+function renderOut(){let p=cur(),a=p.steps.slice(0,p.length),notes=a.map((s,i)=>({s,i})).filter(x=>x.s.type==='note'),mods=notes.map((x,i)=>({...x,n:i+1})).filter(x=>x.s.accent||x.s.slide),warn=[];if(a[0].type==='tie')warn.push('Step 1 ist eine Bindung und braucht normalerweise eine vorhergehende Note.');if(a.at(-1).slide)warn.push('Slide am letzten Pitch gleitet beim Einzelpattern zurück zum Anfang.');
+$('guidePane').innerHTML=warn.map(w=>`<div class="warn">${w}</div>`).join('')+`
+<div class="section"><h3>1 · Speicherplatz vorbereiten</h3><ol><li>MODE auf <b>WRITE PATT</b>.</li><li>TRACK / PATTERN GROUP auf <b>${p.group}</b>.</li><li>FUNCTION, Pattern <b>${p.slot}</b>, Bank <b>${p.bank}</b>.</li><li>Pattern-Taste <b>${p.slot}</b> halten und CLEAR drücken.</li><li>${p.length===16?'16 Steps sind Standard; Längeneingabe kann entfallen.':'FUNCTION halten und STEP '+p.length+'-mal drücken.'}</li></ol></div>
+<div class="section"><h3>2 · Tonhöhen in PITCH MODE</h3><p>PITCH MODE drücken. Nur NOTE-Ereignisse eingeben:</p><div class="chips">${notes.map((x,i)=>`<span class="chip">${i+1}. ${esc(action(x.s))} <small>(Step ${x.i+1})</small></span>`).join('')||'Keine Noten.'}</div><p class="help">Korrektur: Mit WRITE/NEXT prüfen, BACK drücken und die richtige Note neu eingeben.</p></div>
+<div class="section"><h3>3 · Rhythmus in TIME MODE</h3><p>Den <b>kleinen schwarzen TIME-MODE-Knopf direkt links neben BACK</b> drücken. Danach exakt eine Timing-Taste je Step:</p><div class="chips">${a.map(s=>`<span class="chip">${s.type==='note'?'NOTE':s.type==='tie'?'TIE':'REST'}</span>`).join('')}</div><ul><li>NOTE = DOWN / STEP / Taste 9</li><li>TIE = UP / TRIPLET / Taste 0</li><li>REST = ACCENT / PAT A / Taste 100</li></ul><p class="help">Im TIME MODE hörst du keinen Ton. Nach ${p.length} Eingaben endet der Modus automatisch.</p></div>
+<div class="section"><h3>4 · Accent und Slide</h3><ol>${mods.length?mods.map(x=>`<li>Pitch-Note ${x.n} / Zeit-Step ${x.i+1}: WRITE/NEXT halten → ${x.s.accent?'ACCENT':''}${x.s.accent&&x.s.slide?' + ':''}${x.s.slide?'SLIDE':''} → loslassen.</li>`).join(''):'<li>Keine gesetzt.</li>'}</ol><p class="help">Erneutes Setzen entfernt Accent oder Slide wieder.</p></div>
+<div class="section"><h3>5 · Abspielen</h3><p>FUNCTION → MODE auf PLAY PATT → Gruppe ${p.group} → Pattern ${p.slot}${p.bank} → START/STOP.</p></div>`;
+$('sheetPane').innerHTML=`<h2>${esc(p.name)}</h2><p class="help">${esc(p.source)} · Gruppe ${p.group} · ${p.slot}${p.bank}</p><div style="overflow:auto"><table><thead><tr><th>Step</th><th>Ton</th><th>Accent</th><th>Slide</th><th>Timing</th></tr></thead><tbody>${a.map((s,i)=>`<tr><td>${i+1}</td><td>${s.type==='note'?pitch(s):'—'}</td><td>${s.type==='note'&&s.accent?'Ja':'—'}</td><td>${s.type==='note'&&s.slide?'Ja':'—'}</td><td>${s.type==='note'?'NOTE':s.type==='tie'?'TIE':'REST'}</td></tr>`).join('')}</tbody></table></div>`;
+$('json').value=JSON.stringify({schema:'acidratchet.td3mo.pattern',version:1,pattern:p},null,2)}
+
+/* ===== ACIDRATCHET Preview Core V3 =====
+   Persistent monophonic voice:
+   - no node creation per step
+   - softened gate edges
+   - band-limited saw / square
+   - 4-stage nonlinear low-pass
+   - filter envelope, accent and slide
+*/
+let previewAudio=null;
+let previewPlaying=false;
+
+function previewValue(id){return Number($(id).value)}
+
+function polyBlep(t,dt){
+  if(t<dt){t/=dt;return t+t-t*t-1}
+  if(t>1-dt){t=(t-1)/dt;return t*t+t+t+1}
+  return 0
+}
+function midiHz(m){return 440*Math.pow(2,(m-69)/12)}
+function keyToMidi(s){
+  const semis={C1:0,Cs:1,D:2,Ds:3,E:4,F:5,Fs:6,G:7,Gs:8,A:9,As:10,B:11,C2:12};
+  return 36+(semis[s.key]??0)+(Number(s.octave)||0)*12
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function onePoleCoeff(ms,sr){return 1-Math.exp(-1/(Math.max(.1,ms)*.001*sr))}
+
+class AcidPreviewDSP{
+  constructor(sr){
+    this.sr=sr;
+    this.phase=0;
+    this.currentFreq=midiHz(36);
+    this.targetFreq=this.currentFreq;
+    this.stepIndex=0;
+    this.visualStep=0;
+    this.samplesToBoundary=0;
+    this.stepSample=0;
+    this.stepSamples=Math.round(sr*.12);
+    this.slideStart=0;
+    this.slideTarget=null;
+    this.currentStep=null;
+    this.gateTarget=0;
+    this.gateEnv=0;
+    this.filterEnv=0;
+    this.accentEnv=0;
+    this.punchEnv=0;
+    this.f1=this.f2=this.f3=this.f4=0;
+    this.dcX=this.dcY=0;
+    this.running=false;
+    this.lastPatternId='';
+    this.attackCoef=onePoleCoeff(1.8,sr);
+    this.releaseCoef=onePoleCoeff(16,sr);
+    this.glideCoef=onePoleCoeff(34,sr);
+  }
+  reset(){
+    this.stepIndex=0;
+    this.visualStep=0;
+    this.samplesToBoundary=0;
+    this.stepSample=0;
+    this.gateTarget=0;
+    this.gateEnv=0;
+    this.filterEnv=0;
+    this.accentEnv=0;
+    this.punchEnv=0;
+    this.f1=this.f2=this.f3=this.f4=0;
+    this.dcX=this.dcY=0;
+  }
+  params(){
+    const c=previewValue('previewCutoff')/100;
+    const r=previewValue('previewReso')/100;
+    const e=previewValue('previewEnv')/100;
+    const d=previewValue('previewDecay')/100;
+    const a=previewValue('previewAccent')/100;
+    const drive=previewValue('previewDrive')/100;
+    return {
+      bpm:clamp(previewValue('previewBpm')||126,60,200),
+      wave:$('previewWave').value,
+      baseCutoff:55*Math.pow(115,c),
+      resonance:.15+3.45*Math.pow(r,1.18),
+      envAmount:.25+4.4*Math.pow(e,1.05),
+      decaySec:.075+1.15*Math.pow(d,1.55),
+      accent:a,
+      drive
+    }
+  }
+  findNextNote(p,index){
+    for(let n=1;n<=p.length;n++){
+      const s=p.steps[(index+n)%p.length];
+      if(s.type==='rest')return null;
+      if(s.type==='note')return s;
+    }
+    return null;
+  }
+  previousLegato(p,index){
+    const prev=p.steps[(index-1+p.length)%p.length];
+    if(prev.type==='note'&&prev.slide)return true;
+    if(prev.type==='tie'){
+      for(let n=2;n<=p.length;n++){
+        const s=p.steps[(index-n+p.length)%p.length];
+        if(s.type==='rest')return false;
+        if(s.type==='note')return !!s.slide;
+      }
+    }
+    return false;
+  }
+  beginStep(p,par){
+    this.stepSamples=Math.max(64,Math.round(this.sr*60/par.bpm/4));
+    this.stepSample=0;
+    this.visualStep=this.stepIndex;
+    const s=p.steps[this.stepIndex]||p.steps[0];
+    this.currentStep=s;
+    this.slideTarget=null;
+    this.slideStart=Math.round(this.stepSamples*.48);
+
+    if(s.type==='rest'){
+      this.gateTarget=0;
+    }else if(s.type==='tie'){
+      this.gateTarget=1;
+    }else{
+      const hz=midiHz(keyToMidi(s));
+      const legato=this.previousLegato(p,this.stepIndex);
+      if(legato){
+        this.targetFreq=hz;
+        this.gateTarget=1;
+      }else{
+        this.currentFreq=hz;
+        this.targetFreq=hz;
+        this.gateTarget=1;
+        this.filterEnv=1;
+        this.punchEnv=1;
+        this.accentEnv=s.accent?1:0;
+      }
+      if(s.slide){
+        const nxt=this.findNextNote(p,this.stepIndex);
+        if(nxt)this.slideTarget=midiHz(keyToMidi(nxt));
+      }
+    }
+    this.stepIndex=(this.stepIndex+1)%p.length;
+    this.samplesToBoundary=this.stepSamples;
+  }
+  sample(){
+    const p=cur();
+    if(!this.running||!p||!p.length)return 0;
+    const par=this.params();
+
+    if(this.samplesToBoundary<=0)this.beginStep(p,par);
+
+    if(this.currentStep?.type==='note'){
+      if(this.currentStep.slide){
+        if(this.slideTarget&&this.stepSample>=this.slideStart)this.targetFreq=this.slideTarget;
+      }else if(this.stepSample>this.stepSamples*.72){
+        this.gateTarget=0;
+      }
+    }else if(this.currentStep?.type==='rest'){
+      this.gateTarget=0;
+    }
+
+    const glide=this.currentStep?.slide||this.previousLegato(p,this.visualStep);
+    if(glide)this.currentFreq+=(this.targetFreq-this.currentFreq)*this.glideCoef;
+    else this.currentFreq+=(this.targetFreq-this.currentFreq)*onePoleCoeff(1.2,this.sr);
+
+    const dt=clamp(this.currentFreq/this.sr,.00001,.45);
+    let t=this.phase;
+    let osc;
+    if(par.wave==='square'){
+      osc=(t<.5?1:-1)+polyBlep(t,dt)-polyBlep((t+.5)%1,dt);
+      osc*=.82;
+    }else{
+      osc=(2*t-1)-polyBlep(t,dt);
+      osc*=.92;
+    }
+    this.phase+=dt;
+    if(this.phase>=1)this.phase-=1;
+
+    const gateCoef=this.gateTarget>this.gateEnv?this.attackCoef:this.releaseCoef;
+    this.gateEnv+=(this.gateTarget-this.gateEnv)*gateCoef;
+
+    const envDecay=Math.exp(-1/(Math.max(.025,par.decaySec)*this.sr));
+    this.filterEnv*=envDecay;
+    this.punchEnv*=Math.exp(-1/(.035*this.sr));
+    this.accentEnv*=Math.exp(-1/(.19*this.sr));
+
+    const accentLift=this.accentEnv*par.accent;
+    const envDrive=this.filterEnv*(par.envAmount*(1+accentLift*.85));
+    let cutoff=par.baseCutoff*Math.pow(2,envDrive);
+    cutoff=clamp(cutoff,45,Math.min(11500,this.sr*.42));
+
+    const g=clamp(1-Math.exp(-2*Math.PI*cutoff/this.sr),.001,.78);
+    const feedback=par.resonance*(.78+.22*(1-g));
+    const pre=1.05+par.drive*3.6+this.punchEnv*.32;
+    let x=Math.tanh(osc*pre-this.f4*feedback);
+
+    this.f1+=g*(Math.tanh(x)-Math.tanh(this.f1));
+    this.f2+=g*(Math.tanh(this.f1)-Math.tanh(this.f2));
+    this.f3+=g*(Math.tanh(this.f2)-Math.tanh(this.f3));
+    this.f4+=g*(Math.tanh(this.f3)-Math.tanh(this.f4));
+
+    let body=this.f4*.88+this.f3*.18;
+    body=Math.tanh(body*(1.15+par.drive*4.2));
+    const amp=(.42+accentLift*.28)*this.gateEnv;
+    let y=body*amp;
+
+    // DC blocker removes the low "dock" / thump caused by asymmetric saturation.
+    const hp=y-this.dcX+.995*this.dcY;
+    this.dcX=y;this.dcY=hp;
+    y=hp*.72;
+
+    this.samplesToBoundary--;
+    this.stepSample++;
+    return clamp(y,-.92,.92);
+  }
+}
+
+function initPreviewAudio(){
+  if(previewAudio){
+    if(previewAudio.ctx.state==='suspended')previewAudio.ctx.resume();
+    return previewAudio;
+  }
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)throw new Error('Web Audio wird von diesem Browser nicht unterstützt.');
+  const ctx=new AC();
+  const processor=ctx.createScriptProcessor(1024,0,1);
+  const compressor=ctx.createDynamicsCompressor();
+  const master=ctx.createGain();
+  const analyser=ctx.createAnalyser();
+  const dsp=new AcidPreviewDSP(ctx.sampleRate);
+
+  compressor.threshold.value=-14;
+  compressor.knee.value=10;
+  compressor.ratio.value=3;
+  compressor.attack.value=.003;
+  compressor.release.value=.09;
+  master.gain.value=.68;
+  analyser.fftSize=256;
+  analyser.smoothingTimeConstant=.82;
+
+  processor.onaudioprocess=e=>{
+    const out=e.outputBuffer.getChannelData(0);
+    for(let i=0;i<out.length;i++)out[i]=dsp.sample();
+  };
+  processor.connect(compressor);
+  compressor.connect(master);
+  master.connect(analyser);
+  analyser.connect(ctx.destination);
+
+  previewAudio={ctx,processor,compressor,master,analyser,dsp};
+  previewMeterLoop();
+  previewVisualLoop();
+  return previewAudio;
+}
+function previewStart(restart=false){
+  try{
+    const a=initPreviewAudio();
+    if(restart)a.dsp.reset();
+    a.dsp.running=true;
+    previewPlaying=true;
+    $('previewPlay').textContent='■ STOP';
+    $('previewPlay').classList.add('running');
+    $('engineState').textContent='läuft · ACIDRATCHET Preview Core V3';
+  }catch(e){alert(e.message)}
+}
+function previewStop(){
+  previewPlaying=false;
+  if(previewAudio){
+    previewAudio.dsp.running=false;
+    previewAudio.dsp.gateTarget=0;
+  }
+  document.querySelectorAll('.step').forEach(el=>el.classList.remove('playing'));
+  $('previewPlay').textContent='▶ PLAY';
+  $('previewPlay').classList.remove('running');
+  $('engineState').textContent='bereit · geglättete monophone Voice · NOTE / REST / TIE / ACCENT / SLIDE';
+}
+function previewToggle(){previewPlaying?previewStop():previewStart(true)}
+function previewVisualLoop(){
+  if(previewAudio&&previewPlaying){
+    const i=previewAudio.dsp.visualStep;
+    document.querySelectorAll('.step').forEach((el,n)=>el.classList.toggle('playing',n===i));
+    $('engineState').textContent=`läuft · Step ${i+1}/${cur().length} · ${previewValue('previewBpm')} BPM`;
+  }
+  requestAnimationFrame(previewVisualLoop);
+}
+function previewMeterLoop(){
+  if(previewAudio){
+    const data=new Uint8Array(previewAudio.analyser.frequencyBinCount);
+    previewAudio.analyser.getByteFrequencyData(data);
+    let sum=0;for(const v of data)sum+=v*v;
+    const rms=Math.sqrt(sum/data.length);
+    $('previewMeter').style.width=(previewPlaying?Math.min(100,rms/1.45):0)+'%';
+  }
+  requestAnimationFrame(previewMeterLoop);
+}
+function bindPreview(){
+  $('previewPlay').onclick=previewToggle;
+  $('previewRestart').onclick=()=>previewStart(true);
+  const controls=[['previewCutoff','cutoffOut'],['previewReso','resoOut'],['previewEnv','envOut'],['previewDecay','decayOut'],['previewAccent','accentOut'],['previewDrive','driveOut']];
+  controls.forEach(([id,out])=>$(id).oninput=()=>{$(out).value=$(id).value});
+}
+
+/* ===== PDF / PRINT ===== */
+function preparePrint(kind,trigger=true){
+  previewStop();
+  const p=cur();
+  const body=kind==='sheet'?$('sheetPane').innerHTML:$('guidePane').innerHTML;
+  const label=kind==='sheet'?'Pattern-Sheet':'Hardware-Eingabeanleitung';
+  $('printRoot').innerHTML=`<article class="print-doc">
+    <header class="print-head">
+      <div class="brandline">ACIDRATCHET · TD-3-MO PATTERN TRANSLATOR</div>
+      <h1>${esc(p.name)} - ${label}</h1>
+      <div class="print-meta">
+        <div><b>Quelle</b><br>${esc(p.source||'-')}</div>
+        <div><b>Gruppe</b><br>${p.group}</div>
+        <div><b>Pattern</b><br>${p.slot}${p.bank}</div>
+        <div><b>Länge</b><br>${p.length} Steps</div>
+      </div>
+    </header>
+    ${body}
+    <footer class="print-footer">Erstellt mit ACIDRATCHET TD-3-MO Pattern Translator · ${new Date().toLocaleDateString('de-AT')}</footer>
+  </article>`;
+  document.body.classList.add('printing');
+  if(trigger)setTimeout(()=>window.print(),60);
+}
+window.addEventListener('afterprint',()=>{
+  document.body.classList.remove('printing');
+  $('printRoot').innerHTML='';
+});
+function bindPrint(){
+  $('printGuide').onclick=()=>preparePrint('guide',true);
+  $('printSheet').onclick=()=>preparePrint('sheet',true);
+  const pm=new URLSearchParams(location.search).get('print');
+  if(pm==='guide'||pm==='sheet')setTimeout(()=>preparePrint(pm,false),200);
+}
+
+
+function render(){renderLib();fill();renderSteps();renderOut()}
+function parse(tok){let u=tok.toUpperCase().replace('♯','#').replace(/\+/g,'');if(u==='R'||u==='REST'||u==='-')return {...step(),type:'rest'};if(u==='T'||u==='TIE'||u==='~')return {...step(),type:'tie'};let m=u.match(/^(C#|D#|F#|G#|A#|C'|C|D|E|F|G|A|B)(.*)$/);if(!m)throw Error('Token nicht erkannt: '+tok);let note=m[1],mods=m[2]||'',oct=mods.includes('^')?1:mods.includes('V')?-1:0,accent=mods.includes('A'),slide=mods.includes('S');if(/[^AS^V]/.test(mods))throw Error('Modifier nicht erkannt: '+tok);let map={'C':'C1','C#':'Cs','D':'D','D#':'Ds','E':'E','F':'F','F#':'Fs','G':'G','G#':'Gs','A':'A','A#':'As','B':'B',"C'":'C2'};return {type:'note',key:map[note],octave:oct,accent,slide}}
+function applyQuick(){try{let a=$('quick').value.trim().split(/[\s,;|]+/).filter(Boolean).map(parse);if(!a.length||a.length>16)throw Error('1 bis 16 Steps erlaubt.');let p=cur();p.length=a.length;p.steps=a.concat(Array.from({length:16-a.length},step));$('quick').value='';render();touch()}catch(e){alert(e.message)}}
+function meta(id,key,conv=x=>x){$(id).addEventListener('input',()=>{cur()[key]=conv($(id).value);$('title').textContent=cur().name;touch()})}
+function copy(txt,msg){navigator.clipboard?.writeText(txt).then(()=>{$('status').textContent=msg;setTimeout(()=>$('status').textContent='gespeichert',1000)}).catch(()=>prompt('Kopieren:',txt))}
+function exportAll(){let b=new Blob([JSON.stringify({schema:'acidratchet.td3mo.pattern-library',version:1,exportedAt:new Date().toISOString(),patterns:st.patterns},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ACIDRATCHET_TD3MO_PATTERN_LIBRARY.json';a.click();URL.revokeObjectURL(a.href)}
+function importData(){try{let d=JSON.parse($('importText').value),arr=d.patterns||[d.pattern||d];arr.forEach(p=>{if(!p.id)p.id=uid();let i=st.patterns.findIndex(x=>x.id===p.id);i<0?st.patterns.unshift(norm(p)):st.patterns[i]=norm(p)});st.id=arr[0].id;$('modal').classList.remove('open');$('importText').value='';save();render()}catch(e){alert('Import fehlgeschlagen: '+e.message)}}
+$('slot').innerHTML=Array.from({length:8},(_,i)=>`<option>${i+1}</option>`).join('');$('length').innerHTML=Array.from({length:16},(_,i)=>`<option>${i+1}</option>`).join('');
+load();meta('name','name');meta('source','source');meta('group','group');meta('slot','slot',Number);meta('bank','bank');meta('notes','notes');meta('length','length',Number);
+$('new').onclick=()=>{let p=blank();st.patterns.unshift(p);st.id=p.id;save();render();$('name').select()};$('dup').onclick=()=>{let p=JSON.parse(JSON.stringify(cur()));p.id=uid();p.name+=' – Kopie';st.patterns.unshift(p);st.id=p.id;save();render()};$('del').onclick=()=>{if(st.patterns.length===1)return alert('Mindestens ein Pattern muss bleiben.');if(confirm('Pattern wirklich löschen?')){st.patterns=st.patterns.filter(p=>p.id!==st.id);st.id=st.patterns[0].id;save();render()}};$('search').oninput=e=>{st.filter=e.target.value;renderLib()};$('apply').onclick=applyQuick;$('quick').onkeydown=e=>{if(e.key==='Enter')applyQuick()};$('copyGuide').onclick=()=>copy(guidePlain(cur()),'Anleitung kopiert');$('copyJson').onclick=()=>copy($('json').value,'JSON kopiert');$('export').onclick=exportAll;$('import').onclick=()=>$('modal').classList.add('open');$('cancelImport').onclick=()=>$('modal').classList.remove('open');$('confirmImport').onclick=importData;
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));['guide','sheet','json'].forEach(n=>$(n+'Pane').classList.toggle('active',t.dataset.tab===n))});
+bindPreview();
+bindPrint();
+render();
+})();
+</script>
+</body></html>
