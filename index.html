@@ -199,8 +199,21 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
 @media(max-width:760px){.fx-grid,.fx-route,.fx-samples{grid-template-columns:1fr 1fr}.fx-select{min-width:0;width:100%}}
 @media(max-width:430px){.fx-grid,.fx-route,.fx-samples{grid-template-columns:1fr}}
 </style>
+<style>
+.arnav{--arnav-bg:#0a0c09ee;--arnav-line:#2b3324;--arnav-linehi:#455349;--arnav-pan:#12150f;--arnav-acc:#c8f04a;--arnav-dim:#8b957e;--arnav-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.arnav{position:sticky;top:0;z-index:50;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 10px;background:var(--arnav-bg);border-bottom:1px solid var(--arnav-line);backdrop-filter:blur(6px);font-family:var(--arnav-mono);scrollbar-width:none}
+.arnav::-webkit-scrollbar{display:none}
+.arnav a{flex:0 0 auto;padding:7px 11px;border:1px solid var(--arnav-linehi);border-radius:7px;background:var(--arnav-pan);font-size:11px;letter-spacing:.06em;color:var(--arnav-dim);text-decoration:none;white-space:nowrap}
+.arnav a.on{color:#0a0c09;background:var(--arnav-acc);border-color:var(--arnav-acc);font-weight:700}
+</style>
 </head>
 <body>
+<nav class="arnav">
+  <a href="./index.html" class="on">MF79 SYNTH</a>
+  <a href="./ACIDRATCHET_TD3MO_TRANSLATOR.html">TRANSLATOR</a>
+  <a href="./ACIDRATCHET_FX_LAB.html">FX LAB</a>
+  <a href="./ACIDRATCHET_SONGBOOK.html">SONGBOOK</a>
+</nav>
 <div class="unit">
   <header>
     <div>
@@ -732,6 +745,12 @@ let recording=false, recProc=null, recSink=null, recChunks=[], recStart=0, recTi
 let mode='', voice=null, spFrame=0, spInit=false;
 let node2=null, voice2=null, vbGain=null, spFrame2=0, spInit2=false;
 /* ---------- FX BRIDGE STATE ---------- */
+var ARFX_BUILD_VERSION='0.1.0';
+if(typeof ARFX==='undefined'||ARFX.VERSION!==ARFX_BUILD_VERSION){
+  var arfxVersionMsg='FX Core Versionskonflikt: ACIDRATCHET erwartet '+ARFX_BUILD_VERSION+', geladen ist '+(typeof ARFX!=='undefined'?ARFX.VERSION:'kein ARFX')+' — acidratchet-fx-core.js prüfen.';
+  console.error(arfxVersionMsg);
+  window.addEventListener('DOMContentLoaded',function(){var st=document.getElementById('status');if(st)st.textContent=arfxVersionMsg;});
+}
 let fxPreset=ARFX.getActivePreset(),fxRack=null,fxBypassed=false;
 let fxDryA=null,fxDryB=null,fxDryDrums=null,fxSampleDry=null;
 let fxSendA=null,fxSendB=null,fxSendDrums=null,fxSampleSend=null;

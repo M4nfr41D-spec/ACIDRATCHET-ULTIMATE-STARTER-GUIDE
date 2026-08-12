@@ -133,8 +133,22 @@ body.printing #printRoot{display:block;padding:10mm}
 }
 
 </style>
+<style>
+.arnav{--arnav-bg:#0a0c09ee;--arnav-line:#2b3324;--arnav-linehi:#455349;--arnav-pan:#12150f;--arnav-acc:#c8f04a;--arnav-dim:#8b957e;--arnav-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.arnav{position:sticky;top:0;z-index:50;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 10px;background:var(--arnav-bg);border-bottom:1px solid var(--arnav-line);backdrop-filter:blur(6px);font-family:var(--arnav-mono);scrollbar-width:none}
+.arnav::-webkit-scrollbar{display:none}
+.arnav a{flex:0 0 auto;padding:7px 11px;border:1px solid var(--arnav-linehi);border-radius:7px;background:var(--arnav-pan);font-size:11px;letter-spacing:.06em;color:var(--arnav-dim);text-decoration:none;white-space:nowrap}
+.arnav a.on{color:#0a0c09;background:var(--arnav-acc);border-color:var(--arnav-acc);font-weight:700}
+@media(min-width:731px){.side{top:44px;height:calc(100vh - 44px)}}
+</style>
 </head>
 <body>
+<nav class="arnav">
+  <a href="./index.html">MF79 SYNTH</a>
+  <a href="./ACIDRATCHET_TD3MO_TRANSLATOR.html" class="on">TRANSLATOR</a>
+  <a href="./ACIDRATCHET_FX_LAB.html">FX LAB</a>
+  <a href="./ACIDRATCHET_SONGBOOK.html">SONGBOOK</a>
+</nav>
 <div class="app">
 <aside class="side">
 <div class="brand">ACIDRATCHET<br>TD‑3‑MO TRANSLATOR <small style="font-size:10px;color:#91a18f">V3.3 GUIDED</small></div>
