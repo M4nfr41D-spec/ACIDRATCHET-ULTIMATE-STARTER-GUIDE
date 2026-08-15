@@ -751,7 +751,11 @@ if(typeof ARFX==='undefined'||ARFX.VERSION!==ARFX_BUILD_VERSION){
   console.error(arfxVersionMsg);
   window.addEventListener('DOMContentLoaded',function(){var st=document.getElementById('status');if(st)st.textContent=arfxVersionMsg;});
 }
-let fxPreset=ARFX.getActivePreset(),fxRack=null,fxBypassed=false;
+/* FX ist ab Werk AUS: der Grundklang von MF79 bleibt trocken, bis der Effekt
+   bewusst eingeschaltet oder ein Preset aus dem FX LAB gesendet wird. */
+function loadFxBypass(){try{var v=localStorage.getItem('ar_fxBypass');return v===null?true:v==='1'}catch(e){return true}}
+function saveFxBypass(){try{localStorage.setItem('ar_fxBypass',fxBypassed?'1':'0')}catch(e){}}
+let fxPreset=ARFX.getActivePreset(),fxRack=null,fxBypassed=loadFxBypass();
 let fxDryA=null,fxDryB=null,fxDryDrums=null,fxSampleDry=null;
 let fxSendA=null,fxSendB=null,fxSendDrums=null,fxSampleSend=null;
 let fxSampleSlots=ARFX.samples.loadSlots(),fxSampleCache=new Map();
@@ -931,8 +935,8 @@ function renderFxUi(){
   loadFxPresetSelect();
   [['fxCharacter','fxCharOut','character'],['fxMotion','fxMotionOut','motion'],['fxDepth','fxDepthOut','depth'],['fxMix','fxMixOut','mix']].forEach(function(x){var e=fxEl(x[0]),o=fxEl(x[1]);if(e)e.value=fxPct(fxPreset.macros[x[2]]);if(o)o.textContent=fxPct(fxPreset.macros[x[2]])});
   [['fxRouteA','fxRouteAOut','voiceA'],['fxRouteB','fxRouteBOut','voiceB'],['fxRouteD','fxRouteDOut','drums'],['fxRouteS','fxRouteSOut','samples']].forEach(function(x){var e=fxEl(x[0]),o=fxEl(x[1]);if(e)e.value=fxPct(fxPreset.routing[x[2]]);if(o)o.textContent=fxPct(fxPreset.routing[x[2]])+'%'});
-  var b=fxEl('fxBypass');if(b){b.textContent=fxBypassed?'FX: BYPASS':'FX: AN';b.classList.toggle('on',!fxBypassed)}
-  fxSetStatus(fxPreset.name+' · '+fxPreset.engine.toUpperCase()+' · FX Core '+ARFX.VERSION);renderFxSamples();
+  var b=fxEl('fxBypass');if(b){b.textContent=fxBypassed?'FX: AUS':'FX: AN';b.classList.toggle('on',!fxBypassed)}
+  fxSetStatus((fxBypassed?'FX AUS · trocken · ':'')+fxPreset.name+' · '+fxPreset.engine.toUpperCase()+' · FX Core '+ARFX.VERSION);renderFxSamples();
 }
 function applyFxState(store){
   fxPreset=ARFX.normalizePreset(fxPreset);if(store!==false)ARFX.setActivePreset(fxPreset);
@@ -940,17 +944,20 @@ function applyFxState(store){
   var p=ARFX.effectiveParameters(fxPreset),pulse=fxPreset.engine==='pulse',mix=Math.max(0,Math.min(1,+p.mix||0));
   function setg(n,v){if(n&&ctx)n.gain.setTargetAtTime(v,ctx.currentTime,.018)}
   setg(fxSendA,fxPreset.routing.voiceA);setg(fxSendB,fxPreset.routing.voiceB);setg(fxSendDrums,fxPreset.routing.drums);setg(fxSampleSend,fxPreset.routing.samples);
-  setg(fxDryA,pulse?Math.max(.04,1-fxPreset.routing.voiceA*mix):1);setg(fxDryB,pulse?Math.max(.04,1-fxPreset.routing.voiceB*mix):1);setg(fxDryDrums,pulse?Math.max(.04,1-fxPreset.routing.drums*mix):1);setg(fxSampleDry,pulse?Math.max(.04,1-fxPreset.routing.samples*mix):1);
+  var duck=pulse&&!fxBypassed; /* im Bypass bleibt der Dry-Pfad voll — sonst Pegelverlust ohne hörbaren Effekt */
+  setg(fxDryA,duck?Math.max(.04,1-fxPreset.routing.voiceA*mix):1);setg(fxDryB,duck?Math.max(.04,1-fxPreset.routing.voiceB*mix):1);setg(fxDryDrums,duck?Math.max(.04,1-fxPreset.routing.drums*mix):1);setg(fxSampleDry,duck?Math.max(.04,1-fxPreset.routing.samples*mix):1);
   renderFxUi();
 }
 function consumeFxHandoff(){
-  var p=ARFX.consumeHandoff();if(!p)return false;fxPreset=p;ARFX.setActivePreset(p);applyFxState(false);fxSetStatus('FX LAB → '+p.name+' geladen');setStatus('FX LAB → '+p.name+' geladen');return true;
+  var p=ARFX.consumeHandoff();if(!p)return false;fxPreset=p;ARFX.setActivePreset(p);
+  fxBypassed=false;saveFxBypass(); /* aus dem FX LAB gesendet = ausdrücklich gewollt, also hörbar schalten */
+  applyFxState(false);fxSetStatus('FX LAB → '+p.name+' geladen · FX AN');setStatus('FX LAB → '+p.name+' geladen · FX AN');return true;
 }
 function initFxUi(){
   renderFxUi();var sel=fxEl('fxPresetSelect');if(sel)sel.onchange=function(){var p=ARFX.loadLibrary().find(function(x){return x.id===sel.value});if(p){fxPreset=p;applyFxState(true)}};
   [['fxCharacter','fxCharOut','character'],['fxMotion','fxMotionOut','motion'],['fxDepth','fxDepthOut','depth'],['fxMix','fxMixOut','mix']].forEach(function(x){var e=fxEl(x[0]);if(e)e.oninput=function(){fxPreset.macros[x[2]]=+e.value/100;fxEl(x[1]).textContent=e.value;applyFxState(true)}});
   [['fxRouteA','fxRouteAOut','voiceA'],['fxRouteB','fxRouteBOut','voiceB'],['fxRouteD','fxRouteDOut','drums'],['fxRouteS','fxRouteSOut','samples']].forEach(function(x){var e=fxEl(x[0]);if(e)e.oninput=function(){fxPreset.routing[x[2]]=+e.value/100;fxEl(x[1]).textContent=e.value+'%';applyFxState(true)}});
-  var bp=fxEl('fxBypass');if(bp)bp.onclick=function(){fxBypassed=!fxBypassed;applyFxState(false)};
+  var bp=fxEl('fxBypass');if(bp)bp.onclick=function(){fxBypassed=!fxBypassed;saveFxBypass();applyFxState(false)};
   var lab=fxEl('openFxLabBtn');if(lab)lab.onclick=function(){window.open('./ACIDRATCHET_FX_LAB.html','_blank')};
   var rl=fxEl('fxReloadBtn');if(rl)rl.onclick=function(){if(!consumeFxHandoff()){fxPreset=ARFX.getActivePreset();applyFxState(false);fxSetStatus('Aktives FX-Preset neu geladen')}};
   var hold=fxEl('fxHold');if(hold){var down=function(e){e.preventDefault();hold.classList.add('armed');if(fxRack){fxRack.setMacro('depth',1);fxRack.setMacro('mix',1);fxRack.setBypass(false)}};var up=function(){hold.classList.remove('armed');if(fxRack){fxRack.setPreset(fxPreset);fxRack.setBypass(fxBypassed)}};hold.addEventListener('mousedown',down);hold.addEventListener('touchstart',down,{passive:false});window.addEventListener('mouseup',up);window.addEventListener('touchend',up)}
