@@ -387,8 +387,8 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
       <div><div class="fx-title">FX BANK · ONE-SHOTS</div><div class="fx-status" id="fxBankStatus">Knopf drücken — Sound kommt auf dem Takt</div></div>
     </div>
     <div class="fx-grid" id="fxBankCtl">
-      <div class="fx-cell"><label><span>TONHÖHE</span><output id="fxShotPitchOut">220 Hz</output></label><input id="fxShotPitch" type="range" min="40" max="1200" value="220"></div>
-      <div class="fx-cell"><label><span>LÄNGE</span><output id="fxShotLenOut">0.40 s</output></label><input id="fxShotLen" type="range" min="5" max="200" value="40"></div>
+      <div class="fx-cell"><label><span>TONHÖHE ±</span><output id="fxShotPitchOut">0 HT</output></label><input id="fxShotPitch" type="range" min="-24" max="24" step="1" value="0"></div>
+      <div class="fx-cell"><label><span>LÄNGE ×</span><output id="fxShotLenOut">1.00×</output></label><input id="fxShotLen" type="range" min="25" max="300" step="5" value="100"></div>
     </div>
     <div class="fx-bank" id="fxBankGrid"></div>
   </div>
@@ -993,12 +993,20 @@ function fxSampleTime(){
    Recorder bleiben unberührt. Ausgabe läuft über fxSampleDry/fxSampleSend,
    liegt also im Master und damit in der WAV-Aufnahme. */
 function fxnv(value,fallback){var n=Number(value);return (value===undefined||value===null||Number.isNaN(n))?fallback:n;}
+/* [Typ, Beschriftung, Heimatfrequenz Hz, Heimatlänge s]
+   Jeder One-Shot hat seine eigene Lage — ein Cowbell bei 220 Hz ist ein Klotz,
+   ein Laser bei 220 Hz ist kein Laser. Werte mit (WBM) stammen aus den
+   fx1-Angaben des WBM-5-303-Tools, der Rest ist gesetzt und nachjustierbar. */
 const FXSHOTS=[
-  ['hoover','HOOVER'],['stab','STAB'],['acid','ACID'],['acidzap','ACID ZAP'],
-  ['reese','REESE'],['siren','SIRENE'],['laser','LASER'],['subdrop','SUB DROP'],
-  ['donk','DONK'],['clap','CLAP'],['cowbell','COWBELL'],['rimshot','RIMSHOT'],
-  ['metalhit','METAL'],['bell','BELL'],['organ','ORGAN'],['vocal','VOCAL'],
-  ['noise','NOISE'],['vinyl','VINYL']
+  ['hoover','HOOVER',220,0.90],   ['stab','STAB',220,0.30],
+  ['acid','ACID',200,0.35],       ['acidzap','ACID ZAP',300,0.22],
+  ['reese','REESE',55,0.80],      ['siren','SIRENE',660,1.20],
+  ['laser','LASER',1200,0.28],    ['subdrop','SUB DROP',55,1.00],
+  ['donk','DONK',440,0.22],       ['clap','CLAP',500,0.20],
+  ['cowbell','COWBELL',800,0.15], ['rimshot','RIMSHOT',600,0.12],
+  ['metalhit','METAL',900,0.45],  ['bell','BELL',440,0.90],
+  ['organ','ORGAN',220,0.60],     ['vocal','VOCAL',330,0.50],
+  ['noise','NOISE',1000,0.30],    ['vinyl','VINYL',4000,0.60]
 ];
 function playFxShot(out, time, s, noteFreq, accent) {
     var ac = ctx;
@@ -1187,16 +1195,21 @@ function playFxShot(out, time, s, noteFreq, accent) {
     }
 }
 
-function fxShotPitch(){var e=fxEl('fxShotPitch');return e?+e.value:220;}
-function fxShotLen(){var e=fxEl('fxShotLen');return e?(+e.value)/100:0.4;}
-async function fireFxShot(type,label,btn){
+/* Regler wirken relativ zur Heimatlage: Transpose in Halbtönen, Länge als Faktor.
+   Auf 0 / 1.0 klingt jeder Sound so, wie er gemeint ist. */
+function fxShotSemi(){var e=fxEl('fxShotPitch');return e?+e.value:0;}
+function fxShotMul(){var e=fxEl('fxShotLen');return e?(+e.value)/100:1;}
+function fxShotFreq(home){return home*Math.pow(2,fxShotSemi()/12);}
+function fxShotDecay(home){return Math.max(.02,home*fxShotMul());}
+async function fireFxShot(type,label,home,homeLen,btn){
   try{
     await ensureAudio();
     if(!fxSampleDry)return;
-    var t=fxSampleTime();
-    playFxShot(fxSampleDry,t,{type:type,freq:fxShotPitch(),decay:fxShotLen(),level:0.6});
-    if(fxSampleSend)playFxShot(fxSampleSend,t,{type:type,freq:fxShotPitch(),decay:fxShotLen(),level:0.6});
-    var st=fxEl('fxBankStatus');if(st)st.textContent=label+' · '+Math.round(fxShotPitch())+' Hz · '+fxShotLen().toFixed(2)+' s';
+    var t=fxSampleTime(),f=fxShotFreq(home),d=fxShotDecay(homeLen);
+    var spec={type:type,freq:f,decay:d,level:0.6};
+    playFxShot(fxSampleDry,t,spec);
+    if(fxSampleSend)playFxShot(fxSampleSend,t,spec);
+    var st=fxEl('fxBankStatus');if(st)st.textContent=label+' · '+Math.round(f)+' Hz · '+d.toFixed(2)+' s'+(fxShotSemi()?' · '+(fxShotSemi()>0?'+':'')+fxShotSemi()+' HT':'');
     if(btn){btn.classList.add('hit');setTimeout(function(){btn.classList.remove('hit')},110);}
   }catch(e){var s2=fxEl('fxBankStatus');if(s2)s2.textContent='One-Shot fehlgeschlagen: '+e.message;}
 }
@@ -1204,13 +1217,13 @@ function initFxBank(){
   var g=fxEl('fxBankGrid');if(!g)return;g.innerHTML='';
   FXSHOTS.forEach(function(x){
     var b=document.createElement('button');b.className='btn fx-shot';b.textContent=x[1];b.type='button';
-    b.addEventListener('click',function(){fireFxShot(x[0],x[1],b)});
+    b.addEventListener('click',function(){fireFxShot(x[0],x[1],x[2],x[3],b)});
     g.appendChild(b);
   });
   var p=fxEl('fxShotPitch'),po=fxEl('fxShotPitchOut');
-  if(p&&po){var up=function(){po.textContent=Math.round(+p.value)+' Hz'};p.addEventListener('input',up);up();}
+  if(p&&po){var up=function(){var v=+p.value;po.textContent=(v>0?'+':'')+v+' HT'};p.addEventListener('input',up);up();}
   var l=fxEl('fxShotLen'),lo=fxEl('fxShotLenOut');
-  if(l&&lo){var ul=function(){lo.textContent=((+l.value)/100).toFixed(2)+' s'};l.addEventListener('input',ul);ul();}
+  if(l&&lo){var ul=function(){lo.textContent=((+l.value)/100).toFixed(2)+'×'};l.addEventListener('input',ul);ul();}
 }
 async function playFxSample(slot){
   try{await ensureAudio();var m=fxSampleSlots[slot];if(!m)return;var buf=fxSampleCache.get(m.id);if(!buf){var rec=await ARFX.samples.get(m.id);if(!rec)throw Error('Sample nicht gefunden');var ab=await rec.blob.arrayBuffer();buf=await ctx.decodeAudioData(ab.slice(0));fxSampleCache.set(m.id,buf)}var s=ctx.createBufferSource();s.buffer=buf;s.connect(fxSampleDry);s.connect(fxSampleSend);s.start(fxSampleTime());fxSetStatus('Sample '+(slot+1)+' · '+m.name)}catch(e){alert('Sample konnte nicht abgespielt werden: '+e.message)}
