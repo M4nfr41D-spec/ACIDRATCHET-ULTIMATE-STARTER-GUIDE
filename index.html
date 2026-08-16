@@ -193,6 +193,10 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
 .fx-route{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:8px;margin-top:8px}
 .fx-tools{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:9px}
 .fx-samples{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:7px;margin-top:9px}
+.fx-bank{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px;margin-top:9px}
+.fx-shot{min-height:46px;padding:8px 6px;border:1px solid var(--line-hi,#455349);border-radius:7px;background:#0d1009;color:var(--txt,#dfe6d2);font-family:inherit;font-size:10px;letter-spacing:.06em;cursor:pointer;line-height:1.3}
+.fx-shot:active,.fx-shot.hit{background:var(--acc,#c8f04a);color:#0a0c09;border-color:var(--acc,#c8f04a)}
+@media(max-width:430px){.fx-bank{grid-template-columns:repeat(3,1fr)}}
 .fx-pad{min-height:42px;white-space:normal;line-height:1.35}
 .fx-pad b{display:block;color:var(--acc);font-size:9px}.fx-pad span{display:block;font-size:8px;color:var(--txt-dim);overflow:hidden;text-overflow:ellipsis}
 .fx-hold.armed{background:var(--acc);color:#071000;border-color:var(--acc-hi)}
@@ -375,6 +379,18 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
       <select id="fxSampleQuant" class="fx-select" style="min-width:150px"><option value="now">SAMPLE: SOFORT</option><option value="step">SAMPLE: NEXT STEP</option><option value="bar">SAMPLE: NEXT BAR</option></select>
     </div>
     <div class="fx-samples" id="fxSamplePads"></div>
+  </div>
+
+  <!-- FX BANK · One-Shots zum Abfeuern -->
+  <div class="bezel" id="fxBankPanel">
+    <div class="fx-head">
+      <div><div class="fx-title">FX BANK · ONE-SHOTS</div><div class="fx-status" id="fxBankStatus">Knopf drücken — Sound kommt auf dem Takt</div></div>
+    </div>
+    <div class="fx-grid" id="fxBankCtl">
+      <div class="fx-cell"><label><span>TONHÖHE</span><output id="fxShotPitchOut">220 Hz</output></label><input id="fxShotPitch" type="range" min="40" max="1200" value="220"></div>
+      <div class="fx-cell"><label><span>LÄNGE</span><output id="fxShotLenOut">0.40 s</output></label><input id="fxShotLen" type="range" min="5" max="200" value="40"></div>
+    </div>
+    <div class="fx-bank" id="fxBankGrid"></div>
   </div>
 
   <!-- ARPEGGIO -->
@@ -970,6 +986,232 @@ function renderFxSamples(){
 function fxSampleTime(){
   var q=(fxEl('fxSampleQuant')||{}).value||'now';if(!ctx||!running||q==='now')return (ctx?ctx.currentTime:0)+.02;if(q==='step')return Math.max(ctx.currentTime+.02,nextTime);var sd=(60/UI.bpm)*rateMul,rem=(patLen-curStep)%patLen;return Math.max(ctx.currentTime+.02,nextTime+rem*sd);
 }
+/* ---------- FX BANK · One-Shots ----------
+   Syntheseteil portiert aus WBM 5-303 (playFX), Abhängigkeiten ersetzt:
+   state.volume -> UI.volume/100, noiseBufferLong/Short -> noiseBuf, nval -> fxnv.
+   Reine WebAudio-Knoten, die sich selbst abräumen — Worklet, Scheduler und
+   Recorder bleiben unberührt. Ausgabe läuft über fxSampleDry/fxSampleSend,
+   liegt also im Master und damit in der WAV-Aufnahme. */
+function fxnv(value,fallback){var n=Number(value);return (value===undefined||value===null||Number.isNaN(n))?fallback:n;}
+const FXSHOTS=[
+  ['hoover','HOOVER'],['stab','STAB'],['acid','ACID'],['acidzap','ACID ZAP'],
+  ['reese','REESE'],['siren','SIRENE'],['laser','LASER'],['subdrop','SUB DROP'],
+  ['donk','DONK'],['clap','CLAP'],['cowbell','COWBELL'],['rimshot','RIMSHOT'],
+  ['metalhit','METAL'],['bell','BELL'],['organ','ORGAN'],['vocal','VOCAL'],
+  ['noise','NOISE'],['vinyl','VINYL']
+];
+function playFxShot(out, time, s, noteFreq, accent) {
+    var ac = ctx;
+    const freq = noteFreq || s.freq;
+    const vol = (accent ? 0.7 : 0.55) * fxnv(s.level, 0.6) * (UI.volume/100);
+    const type = s.type || 'cowbell';
+    
+    if (type === 'cowbell' || type === 'rimshot') {
+        const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+        o1.type = 'square'; o2.type = 'square';
+        o1.frequency.value = freq; o2.frequency.value = freq * 1.47;
+        g.gain.setValueAtTime(vol, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o1.connect(g); o2.connect(g); g.connect(out);
+        o1.start(time); o2.start(time);
+        o1.stop(time + s.decay + 0.1); o2.stop(time + s.decay + 0.1);
+    } else if (type === 'acid' || type === 'arp') {
+        const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+        o.type = 'sawtooth'; o.frequency.value = freq;
+        f.type = 'lowpass'; f.Q.value = 18;
+        f.frequency.setValueAtTime(freq * 20, time);
+        f.frequency.exponentialRampToValueAtTime(freq * 2, time + s.decay);
+        g.gain.setValueAtTime(vol, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o.connect(f); f.connect(g); g.connect(out);
+        o.start(time); o.stop(time + s.decay + 0.1);
+    } else if (type === 'clap') {
+        for (let i = 0; i < 3; i++) {
+            const bz = ac.sampleRate * 0.02;
+            const bf = ac.createBuffer(1, bz, ac.sampleRate);
+            const dt = bf.getChannelData(0);
+            for (let j = 0; j < bz; j++) dt[j] = Math.random() * 2 - 1;
+            const ns = ac.createBufferSource(); ns.buffer = bf;
+            const ft = ac.createBiquadFilter(); ft.type = 'bandpass'; ft.frequency.value = 1500;
+            const gn = ac.createGain();
+            gn.gain.setValueAtTime(vol * 0.7, time + i * 0.015);
+            gn.gain.exponentialRampToValueAtTime(0.001, time + i * 0.015 + 0.08);
+            ns.connect(ft); ft.connect(gn); gn.connect(out);
+            ns.start(time + i * 0.015);
+        }
+    } else if (type === 'reese') {
+        const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+        o1.type = 'sawtooth'; o2.type = 'sawtooth';
+        o1.frequency.value = freq; o2.frequency.value = freq * 1.008;
+        g.gain.setValueAtTime(vol, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o1.connect(g); o2.connect(g); g.connect(out);
+        o1.start(time); o2.start(time);
+        o1.stop(time + s.decay + 0.1); o2.stop(time + s.decay + 0.1);
+    } else if (type === 'bell') {
+        const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+        o1.type = 'sine'; o2.type = 'sine';
+        o1.frequency.value = freq; o2.frequency.value = freq * 2.4;
+        g.gain.setValueAtTime(vol * 0.5, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay * 2);
+        o1.connect(g); o2.connect(g); g.connect(out);
+        o1.start(time); o2.start(time);
+        o1.stop(time + s.decay * 2 + 0.1); o2.stop(time + s.decay * 2 + 0.1);
+    } else if (type === 'laser') {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(freq * 8, time);
+        o.frequency.exponentialRampToValueAtTime(freq * 0.2, time + s.decay);
+        g.gain.setValueAtTime(vol, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o.connect(g); g.connect(out);
+        o.start(time); o.stop(time + s.decay + 0.1);
+    } else if (type === 'stab') {
+        const o1 = ac.createOscillator(), o2 = ac.createOscillator(), o3 = ac.createOscillator();
+        const f = ac.createBiquadFilter(), g = ac.createGain();
+        o1.type = 'sawtooth'; o2.type = 'sawtooth'; o3.type = 'sawtooth';
+        o1.frequency.value = freq; o2.frequency.value = freq * 1.5; o3.frequency.value = freq * 2;
+        f.type = 'lowpass'; f.Q.value = 5;
+        f.frequency.setValueAtTime(freq * 10, time);
+        f.frequency.exponentialRampToValueAtTime(freq, time + s.decay * 0.5);
+        g.gain.setValueAtTime(vol * 0.7, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o1.connect(f); o2.connect(f); o3.connect(f); f.connect(g); g.connect(out);
+        o1.start(time); o2.start(time); o3.start(time);
+        o1.stop(time + s.decay + 0.1); o2.stop(time + s.decay + 0.1); o3.stop(time + s.decay + 0.1);
+    } else if (type === 'hoover') {
+        // Classic mentasm/hoover reese bass
+        const o1 = ac.createOscillator(), o2 = ac.createOscillator(), o3 = ac.createOscillator();
+        const f = ac.createBiquadFilter(), g = ac.createGain();
+        o1.type = 'sawtooth'; o2.type = 'sawtooth'; o3.type = 'sawtooth';
+        o1.frequency.value = freq; o2.frequency.value = freq * 1.01; o3.frequency.value = freq * 0.99;
+        o2.detune.value = 7; o3.detune.value = -7;
+        f.type = 'bandpass'; f.Q.value = 2;
+        f.frequency.setValueAtTime(freq * 6, time);
+        f.frequency.exponentialRampToValueAtTime(freq * 1.5, time + s.decay * 0.6);
+        f.frequency.exponentialRampToValueAtTime(freq * 4, time + s.decay);
+        g.gain.setValueAtTime(vol * 0.6, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o1.connect(f); o2.connect(f); o3.connect(f); f.connect(g); g.connect(out);
+        o1.start(time); o2.start(time); o3.start(time);
+        o1.stop(time + s.decay + 0.1); o2.stop(time + s.decay + 0.1); o3.stop(time + s.decay + 0.1);
+    } else if (type === 'donk') {
+        const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq * 4, time);
+        o.frequency.exponentialRampToValueAtTime(freq * 0.8, time + 0.06);
+        f.type = 'lowpass'; f.frequency.value = 3000; f.Q.value = 8;
+        g.gain.setValueAtTime(vol, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o.connect(f); f.connect(g); g.connect(out);
+        o.start(time); o.stop(time + s.decay + 0.1);
+    } else if (type === 'organ') {
+        const harmonics = [1, 2, 3, 4, 6, 8];
+        const levels = [1.0, 0.8, 0.5, 0.3, 0.15, 0.1];
+        const g = ac.createGain();
+        const f = ac.createBiquadFilter();
+        f.type = 'lowpass'; f.frequency.value = 4000; f.Q.value = 1;
+        g.gain.setValueAtTime(vol * 0.35, time);
+        g.gain.setValueAtTime(vol * 0.35, time + s.decay * 0.7);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        for (var hi = 0; hi < harmonics.length; hi++) {
+            var oh = ac.createOscillator();
+            var gh = ac.createGain();
+            oh.type = 'sine';
+            oh.frequency.value = freq * harmonics[hi];
+            gh.gain.value = levels[hi] * 0.3;
+            oh.connect(gh); gh.connect(f);
+            oh.start(time); oh.stop(time + s.decay + 0.1);
+        }
+        f.connect(g); g.connect(out);
+    } else if (type === 'vocal') {
+        const o = ac.createOscillator(), g = ac.createGain();
+        const f1 = ac.createBiquadFilter(), f2 = ac.createBiquadFilter();
+        o.type = 'sawtooth'; o.frequency.value = freq;
+        f1.type = 'bandpass'; f1.frequency.value = 700; f1.Q.value = 12;
+        f2.type = 'bandpass'; f2.frequency.value = 1200; f2.Q.value = 10;
+        f1.frequency.setValueAtTime(700, time);
+        f1.frequency.linearRampToValueAtTime(1100, time + s.decay * 0.4);
+        f1.frequency.linearRampToValueAtTime(500, time + s.decay);
+        g.gain.setValueAtTime(vol * 0.8, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        var g2x = ac.createGain(); g2x.gain.value = 0.5;
+        o.connect(f1); o.connect(f2);
+        f1.connect(g); f2.connect(g2x); g2x.connect(g); g.connect(out);
+        o.start(time); o.stop(time + s.decay + 0.1);
+    } else if (type === 'siren') {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'square';
+        o.frequency.setValueAtTime(freq * 0.5, time);
+        o.frequency.exponentialRampToValueAtTime(freq * 4, time + s.decay * 0.5);
+        o.frequency.exponentialRampToValueAtTime(freq * 0.5, time + s.decay);
+        g.gain.setValueAtTime(vol * 0.5, time);
+        g.gain.setValueAtTime(vol * 0.5, time + s.decay * 0.8);
+        g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o.connect(g); g.connect(out);
+        o.start(time); o.stop(time + s.decay + 0.1);
+    } else if (type === 'acidzap') {
+        const o = ac.createOscillator(), f = ac.createBiquadFilter(), d = ac.createWaveShaper(), g = ac.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(freq * 0.5, time); o.frequency.exponentialRampToValueAtTime(freq * 8, time + s.decay * 0.45);
+        f.type = 'bandpass'; f.Q.value = 22; f.frequency.setValueAtTime(freq * 10, time); f.frequency.exponentialRampToValueAtTime(freq * 1.2, time + s.decay);
+        d.curve = makeCrushCurve(42, 8); g.gain.setValueAtTime(vol * 0.8, time); g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        o.connect(f); f.connect(d); d.connect(g); g.connect(out); o.start(time); o.stop(time + s.decay + 0.1);
+    } else if (type === 'metalhit') {
+        const ratios = [1, 1.37, 1.91, 2.41]; const f = ac.createBiquadFilter(), g = ac.createGain();
+        f.type = 'bandpass'; f.frequency.value = freq * 3; f.Q.value = 6; g.gain.setValueAtTime(vol * 0.55, time); g.gain.exponentialRampToValueAtTime(0.001, time + s.decay * 1.4);
+        ratios.forEach(function(r) { var o = ac.createOscillator(); o.type = 'square'; o.frequency.value = freq * r; var og = ac.createGain(); og.gain.value = 0.18; o.connect(og); og.connect(f); o.start(time); o.stop(time + s.decay * 1.4 + 0.1); });
+        f.connect(g); g.connect(out);
+    } else if (type === 'subdrop') {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(Math.max(40, freq * 1.2), time); o.frequency.exponentialRampToValueAtTime(28, time + Math.max(0.2, s.decay));
+        g.gain.setValueAtTime(vol * 0.9, time); g.gain.exponentialRampToValueAtTime(0.001, time + Math.max(0.25, s.decay));
+        o.connect(g); g.connect(out); o.start(time); o.stop(time + Math.max(0.3, s.decay) + 0.1);
+    } else if (type === 'vinyl') {
+        const buf = noiseBuf;
+        const n = ac.createBufferSource(); n.buffer = buf;
+        const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1400;
+        const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 6200; bp.Q.value = 3;
+        const g = ac.createGain(); g.gain.setValueAtTime(vol * 0.18, time); g.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        n.connect(hp); hp.connect(bp); bp.connect(g); g.connect(out); n.start(time); n.stop(time + s.decay + 0.05);
+    } else {
+        const bz = ac.sampleRate * 0.1;
+        const bf = ac.createBuffer(1, bz, ac.sampleRate);
+        const dt = bf.getChannelData(0);
+        for (let i = 0; i < bz; i++) dt[i] = Math.random() * 2 - 1;
+        const ns = ac.createBufferSource(); ns.buffer = bf;
+        const gn = ac.createGain();
+        gn.gain.setValueAtTime(vol, time);
+        gn.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+        ns.connect(gn); gn.connect(out);
+        ns.start(time);
+    }
+}
+
+function fxShotPitch(){var e=fxEl('fxShotPitch');return e?+e.value:220;}
+function fxShotLen(){var e=fxEl('fxShotLen');return e?(+e.value)/100:0.4;}
+async function fireFxShot(type,label,btn){
+  try{
+    await ensureAudio();
+    if(!fxSampleDry)return;
+    var t=fxSampleTime();
+    playFxShot(fxSampleDry,t,{type:type,freq:fxShotPitch(),decay:fxShotLen(),level:0.6});
+    if(fxSampleSend)playFxShot(fxSampleSend,t,{type:type,freq:fxShotPitch(),decay:fxShotLen(),level:0.6});
+    var st=fxEl('fxBankStatus');if(st)st.textContent=label+' · '+Math.round(fxShotPitch())+' Hz · '+fxShotLen().toFixed(2)+' s';
+    if(btn){btn.classList.add('hit');setTimeout(function(){btn.classList.remove('hit')},110);}
+  }catch(e){var s2=fxEl('fxBankStatus');if(s2)s2.textContent='One-Shot fehlgeschlagen: '+e.message;}
+}
+function initFxBank(){
+  var g=fxEl('fxBankGrid');if(!g)return;g.innerHTML='';
+  FXSHOTS.forEach(function(x){
+    var b=document.createElement('button');b.className='btn fx-shot';b.textContent=x[1];b.type='button';
+    b.addEventListener('click',function(){fireFxShot(x[0],x[1],b)});
+    g.appendChild(b);
+  });
+  var p=fxEl('fxShotPitch'),po=fxEl('fxShotPitchOut');
+  if(p&&po){var up=function(){po.textContent=Math.round(+p.value)+' Hz'};p.addEventListener('input',up);up();}
+  var l=fxEl('fxShotLen'),lo=fxEl('fxShotLenOut');
+  if(l&&lo){var ul=function(){lo.textContent=((+l.value)/100).toFixed(2)+' s'};l.addEventListener('input',ul);ul();}
+}
 async function playFxSample(slot){
   try{await ensureAudio();var m=fxSampleSlots[slot];if(!m)return;var buf=fxSampleCache.get(m.id);if(!buf){var rec=await ARFX.samples.get(m.id);if(!rec)throw Error('Sample nicht gefunden');var ab=await rec.blob.arrayBuffer();buf=await ctx.decodeAudioData(ab.slice(0));fxSampleCache.set(m.id,buf)}var s=ctx.createBufferSource();s.buffer=buf;s.connect(fxSampleDry);s.connect(fxSampleSend);s.start(fxSampleTime());fxSetStatus('Sample '+(slot+1)+' · '+m.name)}catch(e){alert('Sample konnte nicht abgespielt werden: '+e.message)}
 }
@@ -1281,6 +1523,7 @@ const PRESETS={
     dr:{k:4369,s:0,h:43690,o:0}}
 };
 initFxUi();
+initFxBank();
 consumeTranslatorHandoff();
 const pc=document.getElementById('presets');
 Object.keys(PRESETS).forEach(name=>{const b=document.createElement('button');b.className='preset';b.textContent=name;
