@@ -193,6 +193,12 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
 .fx-route{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:8px;margin-top:8px}
 .fx-tools{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:9px}
 .fx-samples{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:7px;margin-top:9px}
+.vbchar-row{display:flex;align-items:center;gap:8px;margin:8px 0 4px;flex-wrap:wrap}
+.vbchar-lab{font-size:9px;letter-spacing:.12em;color:var(--txt-dim);flex:0 0 auto}
+.vbchar{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:5px;flex:1 1 240px}
+.vbchar button{padding:7px 5px;border:1px solid #3b473d;border-radius:6px;background:#0a0e0b;color:var(--txt,#dfe6d2);font-family:inherit;font-size:9px;letter-spacing:.06em;cursor:pointer}
+.vbchar button.on{background:var(--acc,#c8f04a);color:#0a0c08;border-color:var(--acc,#c8f04a);font-weight:700}
+@media(max-width:430px){.vbchar{grid-template-columns:repeat(3,1fr)}}
 .fx-bank{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px;margin-top:9px}
 .fx-shot{min-height:46px;padding:8px 6px;border:1px solid var(--line-hi,#455349);border-radius:7px;background:#0d1009;color:var(--txt,#dfe6d2);font-family:inherit;font-size:10px;letter-spacing:.06em;cursor:pointer;line-height:1.3}
 .fx-shot:active,.fx-shot.hit{background:var(--acc,#c8f04a);color:#0a0c09;border-color:var(--acc,#c8f04a)}
@@ -444,6 +450,10 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
       <button class="btn vbf" data-vf="1">Stimme B</button>
       <button class="btn" id="vbOnBtn" style="margin-left:14px">B-Spur: AUS</button>
       <button class="btn" id="clearB" style="margin-left:10px">Clear B</button>
+    </div>
+    <div class="vbchar-row">
+      <span class="vbchar-lab">KLANG B</span>
+      <div class="vbchar" id="vbCharGrid"></div>
     </div>
     <div class="steps focused" id="steps"></div>
     <div class="stepsB muted" id="stepsB"></div>
@@ -1485,8 +1495,51 @@ function pushAllB(){ var p=vpB; P2('tune',p.tune);
 function schedNote2(t,note,acc,sld){ if(mode==='worklet'){ if(node2)node2.port.postMessage({type:'n',at:t,note,acc:acc?1:0,sld:sld?1:0}); } else if(voice2){ voice2.note(t,note,acc?1:0,sld?1:0); } }
 function schedOff2(t){ if(mode==='worklet'){ if(node2)node2.port.postMessage({type:'off',at:t}); } else if(voice2){ voice2.off(t); } }
 function setVbGain(){ if(vbGain)vbGain.gain.setTargetAtTime(vbOn?1:0,(ctx&&ctx.currentTime)||0,.01); }
-function saveVoiceB(){ try{ localStorage.setItem('ar_voiceB',JSON.stringify({steps:stepsB.map(s=>({on:s.on,note:s.note,accent:s.accent,slide:s.slide})),on:vbOn})); }catch(e){} }
-function loadVoiceB(){ try{ var j=localStorage.getItem('ar_voiceB'); if(j){ var o=JSON.parse(j); if(Array.isArray(o.steps)){ for(var i=0;i<STEPS;i++){ var s=o.steps[i]; stepsB[i]= s?{on:s.on|0,note:(s.note|0)||33,accent:s.accent|0,slide:s.slide|0}:{on:0,note:33,accent:0,slide:0}; } } if(typeof o.on==='boolean')vbOn=o.on; } }catch(e){} }
+/* ---------- KLANG B · Instrumentencharaktere fuer die zweite Spur ----------
+   Ein Charakter ist ein benannter vpB-Schnappschuss, genau nach dem Muster der
+   bestehenden PRESETS fuer Spur A. Spur B hat seit jeher einen eigenen
+   Parametersatz (vpB) und einen eigenen Worklet-Knoten (node2) — hier wird nur
+   eine Oberflaeche dafuer gebaut. DSP unberuehrt.
+   u: PVKEYS 0..100 · tune -12..+12 · w: 0 SAW 1 SQUARE 2 S&H 3 SUPER 4 SYNC · d: 0 CLEAN 1 DIRTY */
+const VBCHARS=[
+  {n:'303 BASS',  w:0,d:0,u:{tune:0,  cutoff:42,reso:82,env:62,decay:45,accent:78,dist:20,tone:55,level:64,body:45,squelch:20,sub:10,detune:0, pwm:50,attack:0, release:0,slide:40,lfoRate:30,lfoDepth:0}},
+  {n:'SUB',       w:0,d:0,u:{tune:-12,cutoff:20,reso:12,env:30,decay:70,accent:50,dist:8, tone:38,level:72,body:80,squelch:0, sub:90,detune:0, pwm:50,attack:2, release:12,slide:30,lfoRate:20,lfoDepth:0}},
+  {n:'RUBBER',    w:1,d:0,u:{tune:0,  cutoff:36,reso:66,env:58,decay:55,accent:66,dist:18,tone:50,level:64,body:56,squelch:38,sub:26,detune:22,pwm:34,attack:0, release:6,slide:45,lfoRate:40,lfoDepth:12}},
+  {n:'SUPER LEAD',w:3,d:0,u:{tune:12, cutoff:62,reso:38,env:52,decay:60,accent:60,dist:16,tone:66,level:58,body:42,squelch:10,sub:8, detune:62,pwm:50,attack:3, release:26,slide:50,lfoRate:35,lfoDepth:10}},
+  {n:'SYNC SCREAM',w:4,d:1,u:{tune:12,cutoff:58,reso:72,env:74,decay:42,accent:86,dist:46,tone:70,level:56,body:40,squelch:60,sub:5, detune:56,pwm:50,attack:0, release:8,slide:55,lfoRate:60,lfoDepth:22}},
+  {n:'PAD',       w:3,d:0,u:{tune:0,  cutoff:44,reso:24,env:34,decay:82,accent:40,dist:6, tone:48,level:52,body:62,squelch:0, sub:24,detune:46,pwm:50,attack:42,release:72,slide:60,lfoRate:18,lfoDepth:18}},
+  {n:'PLUCK',     w:0,d:0,u:{tune:12, cutoff:56,reso:62,env:68,decay:18,accent:64,dist:12,tone:62,level:62,body:38,squelch:24,sub:6, detune:12,pwm:50,attack:0, release:10,slide:25,lfoRate:30,lfoDepth:0}},
+  {n:'NOISE HIT', w:2,d:1,u:{tune:0,  cutoff:70,reso:46,env:56,decay:15,accent:72,dist:36,tone:72,level:56,body:34,squelch:44,sub:0, detune:0, pwm:50,attack:0, release:6,slide:20,lfoRate:50,lfoDepth:0}}
+];
+let vbChar='';
+function applyVbChar(name,store){
+  var c=VBCHARS.find(function(x){return x.n===name}); if(!c)return;
+  Object.keys(c.u).forEach(function(k){ if(k in vpB) vpB[k]=c.u[k]; });
+  vpB.wave=c.w; vpB.dirty=c.d; vpB.lfoTarget=vpB.lfoTarget||0;
+  vbChar=name;
+  if(ctx&&ready)pushAllB();
+  /* Steht der Fokus auf B, sollen die Regler den neuen Klang auch zeigen. */
+  if(vbFocus===1){ Object.keys(c.u).forEach(function(k){ if(k in UI) UI[k]=c.u[k]; });
+    wave=c.w; dirty=c.d;
+    document.querySelectorAll('.knob').forEach(setKnob);
+    document.querySelectorAll('#wave button').forEach(function(x){x.classList.toggle('on',+x.dataset.w===wave)});
+    document.querySelectorAll('#dirty button').forEach(function(x){x.classList.toggle('on',+x.dataset.d===dirty)});
+  }
+  renderVbChars(); if(store!==false)saveVoiceB();
+}
+function renderVbChars(){
+  var g=document.getElementById('vbCharGrid'); if(!g)return;
+  if(!g.childElementCount){
+    VBCHARS.forEach(function(c){
+      var b=document.createElement('button'); b.type='button'; b.textContent=c.n; b.dataset.vc=c.n;
+      b.addEventListener('click',function(){ applyVbChar(c.n,true); if(!vbOn){ vbOn=true; setVbGain(); updateVbUI(); renderStepsB(); } });
+      g.appendChild(b);
+    });
+  }
+  Array.prototype.forEach.call(g.children,function(b){ b.classList.toggle('on',b.dataset.vc===vbChar); });
+}
+function saveVoiceB(){ try{ localStorage.setItem('ar_voiceB',JSON.stringify({steps:stepsB.map(s=>({on:s.on,note:s.note,accent:s.accent,slide:s.slide})),on:vbOn,char:vbChar})); }catch(e){} }
+function loadVoiceB(){ try{ var j=localStorage.getItem('ar_voiceB'); if(j){ var o=JSON.parse(j); if(Array.isArray(o.steps)){ for(var i=0;i<STEPS;i++){ var s=o.steps[i]; stepsB[i]= s?{on:s.on|0,note:(s.note|0)||33,accent:s.accent|0,slide:s.slide|0}:{on:0,note:33,accent:0,slide:0}; } } if(typeof o.on==='boolean')vbOn=o.on; if(typeof o.char==='string'&&o.char)applyVbChar(o.char,false); } }catch(e){} }
 function updateVbUI(){
   document.querySelectorAll('.vbf').forEach(b=>b.classList.toggle('on',+b.dataset.vf===vbFocus));
   var ob=document.getElementById('vbOnBtn'); if(ob){ ob.textContent='B-Spur: '+(vbOn?'AN':'AUS'); ob.classList.toggle('on',vbOn); }
@@ -2162,6 +2215,7 @@ const PRESETS={
 };
 initFxUi();
 initFxBank();
+renderVbChars();   /* baut die KLANG-B-Knöpfe auch dann, wenn kein Charakter gespeichert ist */
 consumeTranslatorHandoff();
 const pc=document.getElementById('presets');
 Object.keys(PRESETS).forEach(name=>{const b=document.createElement('button');b.className='preset';b.textContent=name;
