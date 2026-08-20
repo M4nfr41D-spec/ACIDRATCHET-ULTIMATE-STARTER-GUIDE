@@ -774,8 +774,23 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
     return curve;
   }
 
+  /* Diese Kurve sitzt IM Rueckkopplungsweg des Echos, also muss ihre Steigung
+     bei kleinen Pegeln <= 1 bleiben — sonst schwingt die Delayschleife auf.
+     makeDriveCurve normiert auf tanh(x*d)/tanh(d): Spitzenwert 1, aber die
+     Steigung bei Null wird d/tanh(d), also bis zu 12. Mal Feedback 0.92 ergab
+     das Schleifenverstaerkung weit ueber 1 — der Hall lief weg und saettigte
+     in ein Dauerrauschen. Der Fold-Zweig drehte zusaetzlich die Phase.
+     tanh(x*d)/d hat Steigung 1 bei Null, bleibt monoton und komprimiert nach
+     oben: bei hohem Drive werden die Wiederholungen dunkler, nicht lauter. */
   function makeFeedbackCurve(amount) {
-    return makeDriveCurve(clamp(amount, 0, 1), 0.05 + clamp(amount, 0, 1) * 0.12, 16, 0.04);
+    const n = 4096;
+    const curve = new Float32Array(n);
+    const drive = 1 + clamp(amount, 0, 1) * 3;
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.tanh(x * drive) / drive;
+    }
+    return curve;
   }
 
   function makeImpulse(ctx, size, decay, damping) {
