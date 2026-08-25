@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ACIDRATCHET TD-3-MO Pattern Translator V3.3 Guided Programming</title>
+<title>ACIDRATCHET TD-3-MO Pattern Translator V3.4 Studio I/O</title>
 <style>
 :root{--bg:#080a09;--panel:#121713;--line:#354038;--lime:#b7ff28;--text:#f4f6ef;--muted:#aab2aa;--red:#ff665e;--amber:#ffc857}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#19231b,#080a09 38%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
@@ -132,26 +132,33 @@ body.printing #printRoot{display:block;padding:10mm}
   .safe-box,.danger-box{background:#fff;color:#151a16}.pitch-chip,.knob-start span{background:#fff;color:#151a16}
 }
 
-</style>
-<style>
-.arnav{--arnav-bg:#0a0c09ee;--arnav-line:#2b3324;--arnav-linehi:#455349;--arnav-pan:#12150f;--arnav-acc:#c8f04a;--arnav-dim:#8b957e;--arnav-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
-.arnav{position:sticky;top:0;z-index:50;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 10px;background:var(--arnav-bg);border-bottom:1px solid var(--arnav-line);backdrop-filter:blur(6px);font-family:var(--arnav-mono);scrollbar-width:none}
-.arnav::-webkit-scrollbar{display:none}
-.arnav a{flex:0 0 auto;padding:7px 11px;border:1px solid var(--arnav-linehi);border-radius:7px;background:var(--arnav-pan);font-size:11px;letter-spacing:.06em;color:var(--arnav-dim);text-decoration:none;white-space:nowrap}
-.arnav a.on{color:#0a0c09;background:var(--arnav-acc);border-color:var(--arnav-acc);font-weight:700}
-@media(min-width:731px){.side{top:44px;height:calc(100vh - 44px)}}
+/* ===== V3.4 STUDIO I/O ===== */
+.studio-h{margin:16px 0 7px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--lime);border-top:1px solid #29312a;padding-top:12px}
+.studio-h:first-of-type{border-top:0;padding-top:0;margin-top:6px}
+.studio-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end}
+.studio-btns{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:5px;border:1px solid #455349;color:#a9b7ab}
+.badge.eng{border-color:#5b8035;color:#c9f0a0}
+.badge.hw{border-color:#7b6a3d;color:#f0dda0}
+.takes{margin-top:10px;display:grid;gap:5px}
+.take{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:7px 9px;border:1px solid #313a33;border-radius:8px;background:#0a0e0b;font-size:12px}
+.take small{display:block;color:#8f9a91;font-size:10px;margin-top:2px}
+.take .tb{display:flex;gap:4px}
+.take .tb button{padding:4px 8px;font-size:11px}
+.take.slotA{border-color:#5b8035}.take.slotB{border-color:#7b6a3d}
+.abbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.abbig{min-width:74px;font-weight:700}
+.abbig.on{background:#2c4a12;border-color:#5b8035;color:#dcffc4}
+.warnline{margin-top:8px;font-size:11px;color:#e0b062}
+.midi-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4a4a4a;margin-right:5px}
+.midi-dot.ok{background:#7ec13c}.midi-dot.run{background:#e0b062}
+
 </style>
 </head>
 <body>
-<nav class="arnav">
-  <a href="./index.html">MF79 SYNTH</a>
-  <a href="./ACIDRATCHET_TD3MO_TRANSLATOR.html" class="on">TRANSLATOR</a>
-  <a href="./ACIDRATCHET_FX_LAB.html">FX LAB</a>
-  <a href="./ACIDRATCHET_SONGBOOK.html">SONGBOOK</a>
-</nav>
 <div class="app">
 <aside class="side">
-<div class="brand">ACIDRATCHET<br>TD‑3‑MO TRANSLATOR <small style="font-size:10px;color:#91a18f">V3.3 GUIDED</small></div>
+<div class="brand">ACIDRATCHET<br>TD‑3‑MO TRANSLATOR <small style="font-size:10px;color:#91a18f">V3.4 STUDIO</small></div>
 <div class="sub">Bassline- und Drum-Patterns speichern, vorhören, drucken und direkt in ACIDRATCHET-Bänke übertragen.</div>
 <div class="tools"><button class="primary" id="new">+ Neu</button><button id="dup">Duplizieren</button><button class="widebtn" id="restoreClassics">80 Classics Library ergänzen</button></div>
 <input class="search" id="search" placeholder="Pattern suchen …">
@@ -252,6 +259,82 @@ body.printing #printRoot{display:block;padding:10mm}
   </div>
   <div class="meter"><i id="previewMeter"></i></div>
   <div class="player-note">Browser-Audio startet erst nach Klick auf PLAY. Kopfhörerlautstärke zunächst niedrig einstellen.</div>
+</section>
+
+<section class="card studio">
+  <div class="stepsbar">
+    <div>
+      <h2 style="margin-bottom:3px">Studio · FX · MIDI OUT · Aufnahme</h2>
+      <div class="help" style="margin:0">Rein additiv. FX sitzen hinter dem Master, DSP und Step-Timing bleiben unverändert.</div>
+    </div>
+    <span class="engine-state" id="studioState">bereit</span>
+  </div>
+
+  <h3 class="studio-h">FX · Delay &amp; Reverb (nur Preview / Aufnahme, nicht im Gerät)</h3>
+  <div class="player-grid">
+    <div class="field"><label>Delay-Raster</label>
+      <select id="fxDelayDiv">
+        <option value="0.25">1/16</option>
+        <option value="0.3333">1/8 Triole</option>
+        <option value="0.5">1/8</option>
+        <option value="0.75" selected>3/16 (Dub)</option>
+        <option value="1">1/4</option>
+      </select>
+    </div>
+    <div class="knob-field"><label><span>DELAY MIX</span><output id="fxDelayMixOut">0</output></label><input id="fxDelayMix" type="range" min="0" max="100" value="0"></div>
+    <div class="knob-field"><label><span>FEEDBACK</span><output id="fxDelayFbOut">38</output></label><input id="fxDelayFb" type="range" min="0" max="85" value="38"></div>
+    <div class="knob-field"><label><span>DELAY TONE</span><output id="fxDelayToneOut">55</output></label><input id="fxDelayTone" type="range" min="0" max="100" value="55"></div>
+    <div class="knob-field"><label><span>REVERB MIX</span><output id="fxRevMixOut">0</output></label><input id="fxRevMix" type="range" min="0" max="100" value="0"></div>
+  </div>
+  <div class="studio-btns">
+    <button id="fxOffBtn">FX auf 0</button>
+    <button id="fxDubBtn">Dub-Preset</button>
+    <button id="fxRoomBtn">Room-Preset</button>
+  </div>
+
+  <h3 class="studio-h">MIDI OUT · TD‑3 / RD‑6 live spielen</h3>
+  <div class="studio-row">
+    <div class="field"><label>MIDI-Ausgang</label><select id="midiPort"><option value="">— nicht verbunden —</option></select></div>
+    <div class="field"><label>Bass-Kanal</label><select id="midiChan"></select></div>
+    <div class="field"><label>Drum-Kanal</label><select id="midiDrumChan"></select></div>
+    <div class="field"><label>Oktave Bass</label><select id="midiOct"><option value="-2">-2</option><option value="-1">-1</option><option value="0">0</option><option value="1" selected>+1</option><option value="2">+2</option></select></div>
+  </div>
+  <div class="studio-row" style="margin-top:8px">
+    <div class="field"><label>Accent-Velocity</label><input id="midiVelAcc" type="number" min="1" max="127" value="120"></div>
+    <div class="field"><label>Normal-Velocity</label><input id="midiVelNorm" type="number" min="1" max="127" value="88"></div>
+    <div class="field"><label>Drum-Noten K/S/CH/OH</label><input id="midiDrumNotes" value="36,38,42,46"></div>
+    <div class="field"><label class="toggle-line"><input id="midiClock" type="checkbox" checked> MIDI-Clock + Start/Stop senden</label></div>
+  </div>
+  <div class="studio-btns">
+    <button id="midiConnect">MIDI verbinden</button>
+    <button class="primary" id="midiPlay">▶ MIDI START</button>
+    <button id="midiPanic">PANIC · All Notes Off</button>
+    <button id="exportMidiLoop">MIDI-Datei · 8 Takte Loop</button>
+    <span class="smallnote"><span class="midi-dot" id="midiDot"></span><span id="midiInfo">Web MIDI benötigt Chrome/Edge (Desktop oder Android). Safari/iOS unterstützt Web MIDI nicht.</span></span>
+  </div>
+
+  <h3 class="studio-h">Aufnahme &amp; A/B-Benchmark gegen TD‑3 / RD‑6</h3>
+  <div class="studio-row">
+    <div class="field"><label>Audio-Eingang (Interface / Line-In)</label><select id="recInDev"><option value="">— noch nicht verbunden —</option></select></div>
+    <div class="field"><label>Eingangspegel</label><div class="meter" style="margin:0"><i id="recInMeter"></i></div></div>
+    <div class="field"><label class="toggle-line"><input id="recMonitor" type="checkbox"> Eingang mithören (Rückkopplungsgefahr)</label></div>
+    <div class="field"><label class="toggle-line"><input id="recTrim" type="checkbox" checked> Stille am Anfang abschneiden</label></div>
+  </div>
+  <div class="studio-btns">
+    <button id="recInConnect">Eingang verbinden</button>
+    <button class="primary" id="recEngineBtn">● Engine aufnehmen</button>
+    <button id="recInputBtn">● Hardware aufnehmen</button>
+  </div>
+  <div class="takes" id="takes"></div>
+  <div class="abbar">
+    <button class="abbig" id="abPlay">▶ A/B</button>
+    <button class="abbig on" id="abA">A</button>
+    <button class="abbig" id="abB">B</button>
+    <label class="toggle-line"><input id="abMatch" type="checkbox" checked> Lautheit angleichen (RMS)</label>
+    <div class="field" style="max-width:150px"><label>Offset B (ms)</label><input id="abOffset" type="number" value="0" step="5"></div>
+    <span class="smallnote" id="abInfo">A und B laufen synchron im Loop, Umschalten ist lückenlos.</span>
+  </div>
+  <div class="warnline">Aufnahmen liegen nur im Arbeitsspeicher. Zum Behalten als WAV herunterladen.</div>
 </section>
 
 
@@ -729,10 +812,12 @@ function initPreviewAudio(){
   };
   processor.connect(compressor);
   compressor.connect(master);
-  master.connect(analyser);
+  const fx=buildFX(ctx,master,analyser);
   analyser.connect(ctx.destination);
 
-  previewAudio={ctx,processor,compressor,master,analyser,dsp};
+  previewAudio={ctx,processor,compressor,master,analyser,dsp,fx};
+  try{applyFX()}catch(e){}
+  try{engineTapInit()}catch(e){}
   previewMeterLoop();
   previewVisualLoop();
   return previewAudio;
@@ -939,8 +1024,374 @@ $('openAcidratchet').onclick=()=>window.open('./index.html','_blank');
 $('exportMidi').onclick=exportGarageBandMidi;
 $('new').onclick=()=>{let p=blank();st.patterns.unshift(p);st.id=p.id;save();render();$('name').select()};$('dup').onclick=()=>{let p=JSON.parse(JSON.stringify(cur()));p.id=uid();p.name+=' – Kopie';st.patterns.unshift(p);st.id=p.id;save();render()};$('del').onclick=()=>{if(st.patterns.length===1)return alert('Mindestens ein Pattern muss bleiben.');if(confirm('Pattern wirklich löschen?')){st.patterns=st.patterns.filter(p=>p.id!==st.id);st.id=st.patterns[0].id;save();render()}};$('search').oninput=e=>{st.filter=e.target.value;renderLib()};$('apply').onclick=applyQuick;$('quick').onkeydown=e=>{if(e.key==='Enter')applyQuick()};$('copyGuide').onclick=()=>copy(guidePlain(cur()),'Anleitung kopiert');$('copyJson').onclick=()=>copy($('json').value,'JSON kopiert');$('export').onclick=exportAll;$('import').onclick=()=>$('modal').classList.add('open');$('cancelImport').onclick=()=>$('modal').classList.remove('open');$('confirmImport').onclick=importData;
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));['guide','tutorial','sheet','drums','json'].forEach(n=>$(n+'Pane').classList.toggle('active',t.dataset.tab===n))});
+
+/* ===================== V3.4 STUDIO I/O · additiv ===================== */
+const dBs=v=>v>1e-6?(20*Math.log10(v)).toFixed(1)+' dB':'−∞';
+function makeIR(ctx,sec,decay){
+  const n=Math.max(1,Math.floor(ctx.sampleRate*sec)),b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
+  let seed=987654321;const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x40000000-1};
+  const fade=Math.max(1,ctx.sampleRate*.004);
+  for(let i=0;i<n;i++){const t=i/n;d[i]=rnd()*Math.pow(1-t,decay)*(i<fade?i/fade:1)}
+  return b
+}
+function buildFX(ctx,master,out){
+  const dry=ctx.createGain();dry.gain.value=1;
+  const dSend=ctx.createGain();dSend.gain.value=0;
+  const delay=ctx.createDelay(2);delay.delayTime.value=.34;
+  const fb=ctx.createGain();fb.gain.value=.38;
+  const fbLP=ctx.createBiquadFilter();fbLP.type='lowpass';fbLP.frequency.value=3200;
+  const dRet=ctx.createGain();dRet.gain.value=1;
+  const rSend=ctx.createGain();rSend.gain.value=0;
+  const conv=ctx.createConvolver();conv.normalize=true;conv.buffer=makeIR(ctx,2.2,2.7);
+  const rRet=ctx.createGain();rRet.gain.value=1;
+  master.connect(dry);dry.connect(out);
+  master.connect(dSend);dSend.connect(delay);
+  delay.connect(fbLP);fbLP.connect(fb);fb.connect(delay);
+  delay.connect(dRet);dRet.connect(out);
+  master.connect(rSend);rSend.connect(conv);conv.connect(rRet);rRet.connect(out);
+  return {dry,dSend,delay,fb,fbLP,rSend,conv,rRet}
+}
+function applyFX(){
+  if(!previewAudio||!previewAudio.fx)return;
+  const f=previewAudio.fx,ctx=previewAudio.ctx,t=ctx.currentTime,
+    mix=previewValue('fxDelayMix')/100,fbv=previewValue('fxDelayFb')/100,
+    tone=previewValue('fxDelayTone')/100,rev=previewValue('fxRevMix')/100,
+    bpm=Math.max(60,Math.min(200,previewValue('previewBpm')||132)),
+    beats=parseFloat($('fxDelayDiv').value)||.75;
+  f.dSend.gain.setTargetAtTime(mix*.9,t,.03);
+  f.fb.gain.setTargetAtTime(Math.min(.85,fbv),t,.03);
+  f.fbLP.frequency.setTargetAtTime(500*Math.pow(24,tone),t,.05);
+  f.rSend.gain.setTargetAtTime(rev*.75,t,.03);
+  f.dry.gain.setTargetAtTime(1-.25*Math.max(mix,rev),t,.05);
+  f.delay.delayTime.setTargetAtTime(Math.min(1.9,60/bpm*beats),t,.08);
+}
+function bindFX(){
+  const ids=[['fxDelayMix','fxDelayMixOut'],['fxDelayFb','fxDelayFbOut'],['fxDelayTone','fxDelayToneOut'],['fxRevMix','fxRevMixOut']];
+  ids.forEach(([i,o])=>{$(i).oninput=()=>{$(o).value=$(i).value;applyFX()}});
+  $('fxDelayDiv').onchange=applyFX;
+  const set=(m,fb,to,rv,div)=>{$('fxDelayMix').value=m;$('fxDelayFb').value=fb;$('fxDelayTone').value=to;$('fxRevMix').value=rv;if(div)$('fxDelayDiv').value=div;
+    ids.forEach(([i,o])=>$(o).value=$(i).value);applyFX()};
+  $('fxOffBtn').onclick=()=>set(0,38,55,0);
+  $('fxDubBtn').onclick=()=>set(42,62,45,14,'0.75');
+  $('fxRoomBtn').onclick=()=>set(14,25,70,32,'0.5');
+  const bpmEl=$('previewBpm');bpmEl.addEventListener('input',applyFX);
+}
+
+/* ---------- Recorder / Takes ---------- */
+let takes=[],takeSeq=0,recState={engine:false,input:false,buf:[],kind:null,sr:44100};
+let engineTap=null,inStream=null,inSrc=null,inGain=null,inAnalyser=null,inTap=null,inMonGain=null,inMeterOn=false;
+function engineTapInit(){
+  if(engineTap||!previewAudio)return;
+  const ctx=previewAudio.ctx,tap=ctx.createScriptProcessor(4096,1,1),mute=ctx.createGain();
+  mute.gain.value=0;
+  tap.onaudioprocess=e=>{
+    if(!recState.engine)return;
+    recState.buf.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  };
+  previewAudio.analyser.connect(tap);tap.connect(mute);mute.connect(ctx.destination);
+  engineTap=tap;
+}
+function encodeWav(f32,sr){
+  const n=f32.length,ab=new ArrayBuffer(44+n*2),v=new DataView(ab);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');
+  v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+  w(36,'data');v.setUint32(40,n*2,true);
+  let o=44;for(let i=0;i<n;i++){const s=Math.max(-1,Math.min(1,f32[i]));v.setInt16(o,s<0?s*32768:s*32767,true);o+=2}
+  return new Blob([ab],{type:'audio/wav'})
+}
+function finishTake(kind){
+  const chunks=recState.buf,sr=recState.sr;recState.buf=[];
+  let total=0;chunks.forEach(c=>total+=c.length);
+  if(total<1024){$('studioState').textContent='Aufnahme zu kurz';return}
+  let data=new Float32Array(total),off=0;
+  chunks.forEach(c=>{data.set(c,off);off+=c.length});
+  if($('recTrim').checked){
+    let s=0;const th=.0032;
+    while(s<data.length&&Math.abs(data[s])<th)s++;
+    s=Math.max(0,s-Math.round(sr*.005));
+    if(s>0&&s<data.length-1024)data=data.slice(s);
+  }
+  let peak=0,sum=0;
+  for(let i=0;i<data.length;i++){const a=Math.abs(data[i]);if(a>peak)peak=a;sum+=data[i]*data[i]}
+  const rms=Math.sqrt(sum/data.length);
+  const t={id:'t'+(++takeSeq),kind,name:(kind==='engine'?'ENGINE ':'HARDWARE ')+takeSeq+' · '+cur().name,
+    data,sr,peak,rms,dur:data.length/sr};
+  takes.unshift(t);
+  if(!abSlot.A)abSlot.A=t.id;else if(!abSlot.B)abSlot.B=t.id;
+  renderTakes();
+  $('studioState').textContent='Take gespeichert · '+t.dur.toFixed(1)+' s · Peak '+dBs(peak);
+}
+function renderTakes(){
+  $('takes').innerHTML=takes.map(t=>`<div class="take ${abSlot.A===t.id?'slotA':''} ${abSlot.B===t.id?'slotB':''}" data-id="${t.id}">
+  <div><b>${esc(t.name)}</b><small><span class="badge ${t.kind==='engine'?'eng':'hw'}">${t.kind==='engine'?'ENGINE':'HARDWARE'}</span>
+  ${t.dur.toFixed(2)} s · Peak ${dBs(t.peak)} · RMS ${dBs(t.rms)} · ${t.sr} Hz${abSlot.A===t.id?' · Slot A':''}${abSlot.B===t.id?' · Slot B':''}</small></div>
+  <div class="tb"><button data-t="A">→A</button><button data-t="B">→B</button><button data-t="play">▶</button><button data-t="wav">WAV</button><button data-t="del">✕</button></div></div>`).join('')
+  ||'<div class="help" style="margin:0">Noch keine Aufnahmen.</div>';
+  $('takes').querySelectorAll('.take').forEach(row=>{
+    const t=takes.find(x=>x.id===row.dataset.id);
+    row.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
+      const a=b.dataset.t;
+      if(a==='A'){abSlot.A=t.id;abStop();renderTakes()}
+      if(a==='B'){abSlot.B=t.id;abStop();renderTakes()}
+      if(a==='play')playTake(t);
+      if(a==='wav'){const u=URL.createObjectURL(encodeWav(t.data,t.sr)),el=document.createElement('a');
+        el.href=u;el.download=t.name.replace(/[^a-z0-9_-]+/gi,'_')+'.wav';document.body.appendChild(el);el.click();
+        setTimeout(()=>{URL.revokeObjectURL(u);el.remove()},1200)}
+      if(a==='del'){takes=takes.filter(x=>x.id!==t.id);if(abSlot.A===t.id)abSlot.A=null;if(abSlot.B===t.id)abSlot.B=null;abStop();renderTakes()}
+    });
+  });
+}
+function toBuffer(ctx,t){const b=ctx.createBuffer(1,t.data.length,t.sr);b.getChannelData(0).set(t.data);return b}
+let singleSrc=null;
+function playTake(t){
+  const ctx=initPreviewAudio().ctx;
+  if(singleSrc){try{singleSrc.stop()}catch(e){}singleSrc=null}
+  const s=ctx.createBufferSource();s.buffer=toBuffer(ctx,t);
+  const g=ctx.createGain();g.gain.value=.9;s.connect(g);g.connect(ctx.destination);
+  s.start();singleSrc=s;
+  $('studioState').textContent='Take läuft · '+t.name;
+}
+/* ---------- A/B ---------- */
+const abSlot={A:null,B:null};let ab=null,abCur='A';
+function abGain(t){
+  if(!$('abMatch').checked)return .9;
+  const target=.09;
+  return Math.max(.05,Math.min(4,target/Math.max(1e-4,t.rms)))*.9
+}
+function abStop(){
+  if(!ab)return;
+  try{ab.sA.stop();ab.sB.stop()}catch(e){}
+  ab=null;$('abPlay').textContent='▶ A/B';$('abPlay').classList.remove('on');
+}
+function abStart(){
+  const A=takes.find(t=>t.id===abSlot.A),B=takes.find(t=>t.id===abSlot.B);
+  if(!A||!B){alert('Bitte je einen Take auf Slot A und Slot B legen.');return}
+  const ctx=initPreviewAudio().ctx,t0=ctx.currentTime+.15,
+    off=(parseFloat($('abOffset').value)||0)/1000;
+  const sA=ctx.createBufferSource(),sB=ctx.createBufferSource(),gA=ctx.createGain(),gB=ctx.createGain();
+  sA.buffer=toBuffer(ctx,A);sB.buffer=toBuffer(ctx,B);sA.loop=sB.loop=true;
+  gA.gain.value=abCur==='A'?abGain(A):0;gB.gain.value=abCur==='B'?abGain(B):0;
+  sA.connect(gA);sB.connect(gB);gA.connect(ctx.destination);gB.connect(ctx.destination);
+  sA.start(t0);
+  if(off>=0)sB.start(t0+off);else sB.start(t0,Math.min(-off,Math.max(0,B.dur-.05)));
+  ab={sA,sB,gA,gB,A,B};
+  $('abPlay').textContent='■ A/B';$('abPlay').classList.add('on');
+  $('abInfo').textContent='A: '+A.name+'  ·  B: '+B.name;
+}
+function abSelect(which){
+  abCur=which;
+  $('abA').classList.toggle('on',which==='A');$('abB').classList.toggle('on',which==='B');
+  if(!ab)return;
+  const ctx=initPreviewAudio().ctx,t=ctx.currentTime;
+  ab.gA.gain.setTargetAtTime(which==='A'?abGain(ab.A):0,t,.004);
+  ab.gB.gain.setTargetAtTime(which==='B'?abGain(ab.B):0,t,.004);
+}
+/* ---------- Eingang ---------- */
+async function connectInput(deviceId){
+  try{
+    const ctx=initPreviewAudio().ctx;
+    if(inStream)inStream.getTracks().forEach(t=>t.stop());
+    const c={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1};
+    if(deviceId)c.deviceId={exact:deviceId};
+    inStream=await navigator.mediaDevices.getUserMedia({audio:c});
+    inSrc=ctx.createMediaStreamSource(inStream);
+    inGain=ctx.createGain();inGain.gain.value=1;
+    inAnalyser=ctx.createAnalyser();inAnalyser.fftSize=256;inAnalyser.smoothingTimeConstant=.7;
+    inMonGain=ctx.createGain();inMonGain.gain.value=$('recMonitor').checked?.6:0;
+    inTap=ctx.createScriptProcessor(4096,1,1);
+    const mute=ctx.createGain();mute.gain.value=0;
+    inTap.onaudioprocess=e=>{if(recState.input)recState.buf.push(new Float32Array(e.inputBuffer.getChannelData(0)))};
+    inSrc.connect(inGain);inGain.connect(inAnalyser);inGain.connect(inTap);inTap.connect(mute);mute.connect(ctx.destination);
+    inGain.connect(inMonGain);inMonGain.connect(ctx.destination);
+    const devs=await navigator.mediaDevices.enumerateDevices();
+    $('recInDev').innerHTML=devs.filter(d=>d.kind==='audioinput')
+      .map(d=>`<option value="${d.deviceId}">${esc(d.label||'Eingang')}</option>`).join('')||'<option value="">kein Eingang</option>';
+    const track=inStream.getAudioTracks()[0];
+    const id=track&&track.getSettings?track.getSettings().deviceId:null;
+    if(id)$('recInDev').value=id;
+    if(!inMeterOn){inMeterOn=true;inMeterLoop()}
+    $('studioState').textContent='Eingang verbunden · '+(track?track.label:'');
+  }catch(e){alert('Eingang nicht verfügbar: '+e.message)}
+}
+function inMeterLoop(){
+  if(inAnalyser){
+    const d=new Uint8Array(inAnalyser.frequencyBinCount);inAnalyser.getByteFrequencyData(d);
+    let s=0;for(const v of d)s+=v*v;
+    $('recInMeter').style.width=Math.min(100,Math.sqrt(s/d.length)/1.45)+'%';
+  }
+  requestAnimationFrame(inMeterLoop);
+}
+function bindRecorder(){
+  $('recInConnect').onclick=()=>connectInput($('recInDev').value||null);
+  $('recInDev').onchange=()=>connectInput($('recInDev').value||null);
+  $('recMonitor').onchange=()=>{if(inMonGain)inMonGain.gain.value=$('recMonitor').checked?.6:0};
+  $('recEngineBtn').onclick=()=>{
+    const a=initPreviewAudio();engineTapInit();recState.sr=a.ctx.sampleRate;
+    if(recState.engine){recState.engine=false;$('recEngineBtn').textContent='● Engine aufnehmen';$('recEngineBtn').classList.remove('running');finishTake('engine')}
+    else{if(recState.input)return alert('Läuft bereits eine Hardware-Aufnahme.');
+      recState.buf=[];recState.engine=true;$('recEngineBtn').textContent='■ STOP (Engine)';$('recEngineBtn').classList.add('running');
+      $('studioState').textContent='Engine wird aufgenommen · inkl. FX'}
+  };
+  $('recInputBtn').onclick=async()=>{
+    if(!inStream)await connectInput(null);
+    if(!inStream)return;
+    recState.sr=previewAudio.ctx.sampleRate;
+    if(recState.input){recState.input=false;$('recInputBtn').textContent='● Hardware aufnehmen';$('recInputBtn').classList.remove('running');finishTake('input')}
+    else{if(recState.engine)return alert('Läuft bereits eine Engine-Aufnahme.');
+      recState.buf=[];recState.input=true;$('recInputBtn').textContent='■ STOP (Hardware)';$('recInputBtn').classList.add('running');
+      $('studioState').textContent='Hardware wird aufgenommen'}
+  };
+  $('abPlay').onclick=()=>ab?abStop():abStart();
+  $('abA').onclick=()=>abSelect('A');
+  $('abB').onclick=()=>abSelect('B');
+  $('abMatch').onchange=()=>abSelect(abCur);
+  renderTakes();
+}
+
+/* ---------- MIDI OUT ---------- */
+const MO={access:null,out:null,playing:false,timer:null,next:0,step:0,active:[]};
+function midiChanVal(id){return Math.max(0,Math.min(15,(+$(id).value||1)-1))}
+function midiSend(bytes,at){try{MO.out.send(bytes,at)}catch(e){}}
+function midiRefreshPorts(){
+  if(!MO.access)return;
+  const outs=[...MO.access.outputs.values()];
+  const sel=$('midiPort'),prev=sel.value;
+  sel.innerHTML='<option value="">— nicht verbunden —</option>'+outs.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
+  if(outs.length){sel.value=outs.some(o=>o.id===prev)?prev:outs[0].id;MO.out=MO.access.outputs.get(sel.value)||null}
+  $('midiDot').className='midi-dot'+(MO.out?' ok':'');
+  $('midiInfo').textContent=MO.out?('verbunden · '+MO.out.name):(outs.length?'Port wählen':'kein MIDI-Ausgang gefunden');
+}
+async function midiConnect(){
+  if(!navigator.requestMIDIAccess){
+    alert('Web MIDI ist in diesem Browser nicht verfügbar.\nFunktioniert in Chrome/Edge (Desktop, Android). Safari und iOS unterstützen Web MIDI nicht.');
+    return;
+  }
+  try{
+    MO.access=await navigator.requestMIDIAccess({sysex:false});
+    MO.access.onstatechange=midiRefreshPorts;
+    midiRefreshPorts();
+  }catch(e){alert('MIDI-Zugriff abgelehnt: '+e.message)}
+}
+function midiNoteFor(s){
+  return Math.max(0,Math.min(127,keyToMidi(s)+12*(+$('midiOct').value||0)))
+}
+function midiStepEvents(p,i,t,stepMs){
+  const ch=midiChanVal('midiChan'),dch=midiChanVal('midiDrumChan'),
+    vA=Math.max(1,Math.min(127,+$('midiVelAcc').value||120)),
+    vN=Math.max(1,Math.min(127,+$('midiVelNorm').value||88));
+  const s=p.steps[i]||step();
+  if(s.type==='note'){
+    let k=1;while(k<p.length&&(p.steps[(i+k)%p.length]||step()).type==='tie')k++;
+    const note=midiNoteFor(s),vel=s.accent?vA:vN,
+      dur=stepMs*k*(s.slide?1.06:.56);
+    midiSend([0x90|ch,note,vel],t);
+    midiSend([0x80|ch,note,0],t+dur);
+    MO.active.push([0x80|ch,note]);
+  }
+  const dm=p.drums||{},notes=String($('midiDrumNotes').value||'36,38,42,46').split(',').map(x=>Math.max(0,Math.min(127,parseInt(x,10)||0)));
+  [['k',0,110],['s',1,104],['h',2,78],['o',3,86]].forEach(([key,idx,vel])=>{
+    if(((+dm[key]||0)>>i)&1){
+      const n=notes[idx]??36;
+      midiSend([0x90|dch,n,vel],t);
+      midiSend([0x80|dch,n,0],t+Math.min(90,stepMs*.5));
+      MO.active.push([0x80|dch,n]);
+    }
+  });
+}
+function midiSched(){
+  if(!MO.playing||!MO.out)return;
+  const p=cur(),bpm=Math.max(60,Math.min(200,previewValue('previewBpm')||p.bpm||132)),
+    stepMs=60000/bpm/4,clock=$('midiClock').checked,now=performance.now();
+  while(MO.next<now+140){
+    const t=MO.next;
+    if(clock)for(let c=0;c<6;c++)midiSend([0xF8],t+c*stepMs/6);
+    midiStepEvents(p,MO.step%Math.max(1,p.length),t,stepMs);
+    MO.step=(MO.step+1)%Math.max(1,p.length);
+    MO.next+=stepMs;
+  }
+  if(MO.active.length>400)MO.active=MO.active.slice(-200);
+}
+function midiStart(){
+  if(!MO.out){alert('Kein MIDI-Ausgang gewählt.');return}
+  MO.playing=true;MO.step=0;MO.active=[];
+  MO.next=performance.now()+80;
+  if($('midiClock').checked)midiSend([0xFA],MO.next-4);
+  MO.timer=setInterval(midiSched,25);midiSched();
+  $('midiPlay').textContent='■ MIDI STOP';$('midiPlay').classList.add('running');
+  $('midiDot').className='midi-dot run';
+}
+function midiStop(){
+  MO.playing=false;clearInterval(MO.timer);
+  if(MO.out){
+    if($('midiClock').checked)midiSend([0xFC],performance.now());
+    midiPanic();
+  }
+  $('midiPlay').textContent='▶ MIDI START';$('midiPlay').classList.remove('running');
+  $('midiDot').className='midi-dot'+(MO.out?' ok':'');
+}
+function midiPanic(){
+  if(!MO.out)return;
+  const now=performance.now();
+  MO.active.forEach(m=>midiSend(m,now));MO.active=[];
+  for(let ch=0;ch<16;ch++){midiSend([0xB0|ch,123,0],now);midiSend([0xB0|ch,120,0],now)}
+}
+function bindMidi(){
+  const chans=Array.from({length:16},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
+  $('midiChan').innerHTML=chans;$('midiChan').value='1';
+  $('midiDrumChan').innerHTML=chans;$('midiDrumChan').value='10';
+  $('midiConnect').onclick=midiConnect;
+  $('midiPort').onchange=()=>{MO.out=MO.access?MO.access.outputs.get($('midiPort').value)||null:null;midiRefreshPorts()};
+  $('midiPlay').onclick=()=>MO.playing?midiStop():midiStart();
+  $('midiPanic').onclick=()=>{midiStop();midiPanic()};
+  $('exportMidiLoop').onclick=()=>exportLoopMidi(8);
+  if(!navigator.requestMIDIAccess){$('midiInfo').textContent='Web MIDI in diesem Browser nicht verfügbar (Safari/iOS). Datei-Export nutzen.';}
+}
+/* ---------- MIDI-Datei · N Takte ---------- */
+function exportLoopMidi(bars){
+  const p=cur(),ppq=96,stepTicks=ppq/4,bpm=Math.max(60,Math.min(200,+p.bpm||132)),tempo=Math.round(60000000/bpm),
+    barTicks=stepTicks*p.length;
+  const meta=[{t:0,o:0,b:[0xFF,0x51,3,(tempo>>16)&255,(tempo>>8)&255,tempo&255]},{t:0,o:1,b:[0xFF,0x03,p.name.length,...ascii(p.name)]}];
+  const bass=[],drums=[],dm=p.drums||{},map=[['k',36,112],['s',38,105],['h',42,78],['o',46,88]];
+  for(let r=0;r<Math.max(1,bars);r++){
+    const base=r*barTicks;let lastNote=48;
+    for(let i=0;i<p.length;i++){
+      const s=p.steps[i]||step(),t=base+i*stepTicks;
+      if(s.type==='note'){
+        const note=Math.max(0,Math.min(127,translatorMidi(s)+12));lastNote=note;
+        const vel=s.accent?118:88,next=p.steps[(i+1)%p.length]||step(),
+          legato=s.slide&&next.type!=='rest',dur=Math.round(stepTicks*(legato?1.18:.88));
+        bass.push({t,o:1,b:[0x90,note,vel]},{t:t+dur,o:0,b:[0x80,note,0]});
+      }else if(s.type==='tie'){
+        bass.push({t,o:1,b:[0x90,lastNote,72]},{t:t+Math.round(stepTicks*1.05),o:0,b:[0x80,lastNote,0]});
+      }
+    }
+    for(const [key,note,vel] of map)for(let i=0;i<p.length;i++)if(((+dm[key]||0)>>i)&1){
+      const tt=base+i*stepTicks;drums.push({t:tt,o:1,b:[0x99,note,vel]},{t:tt+Math.round(stepTicks*.45),o:0,b:[0x89,note,0]});
+    }
+  }
+  const name=(p.name||'ACIDRATCHET').replace(/[^a-z0-9_-]+/gi,'_').slice(0,50),
+    bytes=[...ascii('MThd'),0,0,0,6,0,1,0,3,...u16(ppq),...midiTrack(meta),...midiTrack(bass),...midiTrack(drums)];
+  const blob=new Blob([new Uint8Array(bytes)],{type:'audio/midi'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name+'_'+bpm+'bpm_x'+bars+'.mid';document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1200);
+  $('status').textContent=bars+' Takte MIDI exportiert';
+}
+/* ---------- Tastatur ---------- */
+function bindKeys(){
+  document.addEventListener('keydown',e=>{
+    const el=document.activeElement,tag=el?el.tagName:'';
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+    if(e.code==='Space'){e.preventDefault();e.shiftKey?(MO.playing?midiStop():midiStart()):previewToggle()}
+    if(e.key==='r'||e.key==='R'){e.preventDefault();$('recEngineBtn').click()}
+  });
+}
+function bindStudio(){bindFX();bindRecorder();bindMidi();bindKeys()}
+
 bindPreview();
 bindPrint();
+bindStudio();
 render();
 })();
 </script>
