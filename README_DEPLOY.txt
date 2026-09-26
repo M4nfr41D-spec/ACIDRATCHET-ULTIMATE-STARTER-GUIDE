@@ -1,0 +1,1 @@
+Deploy: upload index.html and .nojekyll to the repository root. This patch changes only accent input drive: accInputDrive = 1 + accSweep * 0.10. HPF remains removed. No slide, decay, cutoff, resonance, feedback or smoothing changes.
