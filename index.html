@@ -163,6 +163,15 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
 .macroBtn.armed{background:var(--acc);color:#0a0c08;border-color:var(--acc);box-shadow:0 0 20px var(--acc-glow);text-shadow:none}
 .macroBtn.neutral{flex:0 0 auto;min-width:74px;font-size:11px;font-weight:700;color:var(--txt-dim);border-color:#2a3220;letter-spacing:1.5px}
 .macroBtn.neutral:hover{color:var(--acc);border-color:var(--acc-dim);box-shadow:none}
+@media(max-width:560px){
+  /* 16 Steps auf 375px = ~17px je Step. Auf 2 Reihen a 8 -> ~38px, daumentauglich. */
+  .steps,.snum,.stepsB,.dcells{grid-template-columns:repeat(8,1fr);gap:6px}
+  .steps .st,.stepsB .st{min-height:56px}
+  .snum{font-size:9px}
+  .steps>*:nth-child(n+9),.snum>*:nth-child(n+9),.stepsB>*:nth-child(n+9),.dcells>*:nth-child(n+9){margin-top:9px}
+}
+#playTop{display:none}
+@media(max-width:900px){#playTop{display:inline-block;align-self:center;margin-left:6px;min-width:104px}}
 @media(max-width:760px){.macros-bar{flex-wrap:wrap;gap:10px}.macroBtn{min-width:70px;padding:13px 6px;font-size:11px;letter-spacing:1.5px}}
 .copyright{margin-top:16px;padding-top:13px;border-top:1px solid var(--line);text-align:center;font-size:9px;letter-spacing:1.4px;color:var(--txt-dim);line-height:1.8;text-transform:uppercase}
 .copyright b{color:var(--acc-dim);letter-spacing:2px}
@@ -255,6 +264,7 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
         <div class="kc core"><div class="knob" data-k="env" data-prim="env" data-shiftk="attack" data-primlab="Env Mod" data-seclab="Attack" data-min="0" data-max="100" data-val="62"></div><div class="kl">Env Mod</div><div class="kv" data-for="env"></div></div>
         <div class="kc core"><div class="knob" data-k="decay" data-prim="decay" data-shiftk="release" data-primlab="Decay" data-seclab="Release" data-min="0" data-max="100" data-val="55"></div><div class="kl">Decay</div><div class="kv" data-for="decay"></div></div>
         <div class="kc core"><div class="knob" data-k="accent" data-min="0" data-max="100" data-val="62"></div><div class="kl">Accent</div><div class="kv" data-for="accent"></div></div>
+        <button class="btn play" id="playTop" type="button">&#9654; START</button>
       </div>
       <div class="lab" style="margin-top:14px">Tone · Modulation</div>
       <div class="knobs">
@@ -316,7 +326,7 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
     </div>
     <div class="sect" style="flex:0 0 auto">
       <div class="lab">LFO Ziel</div>
-      <div class="seg" id="lfoTarget"><button data-lt="0" class="on">CUT</button><button data-lt="1">PITCH</button><button data-lt="2">PWM</button><button data-lt="3">RESO</button><button data-lt="4">DRIVE</button></div>
+      <div class="seg" id="lfoTarget"><button data-lt="0" class="on">CUT</button><button data-lt="1">PITCH</button><button data-lt="2">PWM</button><button data-lt="3">RESO</button><button data-lt="4">DRIVE</button><button data-lt="5">TREM</button></div>
     </div>
     <div class="sect" style="flex:0 0 auto">
       <div class="lab">Play Quantize</div>
@@ -485,6 +495,7 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
       <button class="btn dkit on" data-kit="0">CORE</button>
       <button class="btn dkit" data-kit="1">808</button>
       <button class="btn dkit" data-kit="2">909</button>
+      <button class="btn dkit" data-kit="3">LINN</button>
     </div>
     <div class="tools" style="margin-bottom:8px">
       <button class="btn on" id="bankLinkBtn">Drums+B → Bank: AN</button>
@@ -1146,7 +1157,7 @@ canvas{width:100%;height:120px;display:block;background:#070807;border:1px solid
 </script>
 <script>
 "use strict";
-var VER="6.3 ZDF+FX";
+var VER="6.4 ZDF+FX+INST";
 try{
  console.log('%c ACIDRATCHET-MF79 ','background:#aef022;color:#0a0c08;font-size:18px;font-weight:bold;padding:4px 12px;border-radius:5px');
  console.log('%c© 2026 Manfred Foissner — All rights reserved.\nUnauthorized copying, redistribution or reuse of this code is prohibited.','color:#aef022;font-size:12px;line-height:1.5');
@@ -1251,7 +1262,8 @@ function makeVoice(sr,os){ os=os||1;
         var filt=fout*(1+k*0.09);
         bodyLP+=(osc-bodyLP)*bodyCoef;                    // ECHTER Body: tiefe Oszillator-Anteile (harmonisch verbunden)
         var body=bodyLP*bodyAmt;
-        var v=(filt+body)*vca;
+        var trem=1; if(lfoTarget===5){ trem=1-lfoAmt*0.5*(1-lfoVal); if(trem<0)trem=0; }   // LFO-Ziel 5 = VCA (Tremolo), additiv
+        var v=(filt+body)*vca*trem;
         var shaped=(dirty?wsDirty(v,1+distA*5.5):wsClean(v,1+distA*5.5))*(1/(1+distA*2.6));
         var y=v*(1-distA)+shaped*distA;                   // distortion = character, loudness-normalized
         lp+=(y-lp)*toneLpCoef; var bright=y-lp;
@@ -1350,7 +1362,9 @@ let drumKit=0;
 const KITS={
  0:{kPitch:150,kDecay:0.26,kDrive:0.30,kClick:0.35,kSweepT:0.035,kEnd:45, sDecay:0.18,sNoise:0.70,sTone:1.00, hDecay:0.045,hMetal:0.50,hBright:7200, kSat:0,kClickHi:1200,sBright:1700,metBase:317,metBP:9000,metHP:6500},
  1:{kPitch:110,kDecay:0.62,kDrive:0.30,kClick:0.10,kSweepT:0.050,kEnd:48, sDecay:0.22,sNoise:0.45,sTone:1.70, hDecay:0.050,hMetal:1.00,hBright:6000, kSat:0.85,kClickHi:1000,sBright:1400,metBase:540,metBP:6500,metHP:3500},
- 2:{kPitch:210,kDecay:0.22,kDrive:0.50,kClick:0.95,kSweepT:0.018,kEnd:50, sDecay:0.16,sNoise:1.15,sTone:0.40, hDecay:0.038,hMetal:0.12,hBright:9500, kSat:0.15,kClickHi:3200,sBright:2400,metBase:317,metBP:9000,metHP:7000}
+ 2:{kPitch:210,kDecay:0.22,kDrive:0.50,kClick:0.95,kSweepT:0.018,kEnd:50, sDecay:0.16,sNoise:1.15,sTone:0.40, hDecay:0.038,hMetal:0.12,hBright:9500, kSat:0.15,kClickHi:3200,sBright:2400,metBase:317,metBP:9000,metHP:7000},
+ /* 3 = LINN: kurzer trockener Kick fast ohne Sweep, breiter gegateter Noise-Snare, sehr kurze unmetallische Hats */
+ 3:{kPitch:125,kDecay:0.30,kDrive:0.18,kClick:0.55,kSweepT:0.012,kEnd:62, sDecay:0.24,sNoise:1.05,sTone:0.55, hDecay:0.030,hMetal:0.08,hBright:8600, kSat:0.05,kClickHi:2600,sBright:1950,metBase:317,metBP:9800,metHP:7600}
 };
 function applyKit(k){ drumKit=k; Object.assign(drumCfg,KITS[k]); if(drumShaper)drumShaper.curve=shaperCurve(drumCfg.kDrive); updateDrumUI(); saveDrums(); }
 function saveDrums(){ try{ localStorage.setItem('ar_drums',JSON.stringify({pat:drumPat,on:drumOn,vol:drumVol,cfg:drumCfg,kit:drumKit,link:bankLink})); }catch(e){} }
@@ -1399,7 +1413,7 @@ let recording=false, recProc=null, recSink=null, recChunks=[], recStart=0, recTi
 let mode='', voice=null, spFrame=0, spInit=false;
 let node2=null, voice2=null, vbGain=null, spFrame2=0, spInit2=false;
 /* ---------- FX BRIDGE STATE ---------- */
-var ARFX_BUILD_VERSION='0.1.0';
+var ARFX_BUILD_VERSION='0.1.1';
 if(typeof ARFX==='undefined'||ARFX.VERSION!==ARFX_BUILD_VERSION){
   var arfxVersionMsg='FX Core Versionskonflikt: ACIDRATCHET erwartet '+ARFX_BUILD_VERSION+', geladen ist '+(typeof ARFX!=='undefined'?ARFX.VERSION:'kein ARFX')+' — acidratchet-fx-core.js prüfen.';
   console.error(arfxVersionMsg);
@@ -1534,18 +1548,23 @@ const VBCHARS=[
   {n:'SYNC SCREAM',w:4,d:1,u:{tune:12,cutoff:58,reso:72,env:74,decay:42,accent:86,dist:46,tone:70,level:56,body:40,squelch:60,sub:5, detune:56,pwm:50,attack:0, release:8,slide:55,lfoRate:60,lfoDepth:22}},
   {n:'PAD',       w:3,d:0,u:{tune:0,  cutoff:44,reso:24,env:34,decay:82,accent:40,dist:6, tone:48,level:52,body:62,squelch:0, sub:24,detune:46,pwm:50,attack:42,release:72,slide:60,lfoRate:18,lfoDepth:18}},
   {n:'PLUCK',     w:0,d:0,u:{tune:12, cutoff:56,reso:62,env:68,decay:18,accent:64,dist:12,tone:62,level:62,body:38,squelch:24,sub:6, detune:12,pwm:50,attack:0, release:10,slide:25,lfoRate:30,lfoDepth:0}},
-  {n:'NOISE HIT', w:2,d:1,u:{tune:0,  cutoff:70,reso:46,env:56,decay:15,accent:72,dist:36,tone:72,level:56,body:34,squelch:44,sub:0, detune:0, pwm:50,attack:0, release:6,slide:20,lfoRate:50,lfoDepth:0}}
+  {n:'NOISE HIT', w:2,d:1,u:{tune:0,  cutoff:70,reso:46,env:56,decay:15,accent:72,dist:36,tone:72,level:56,body:34,squelch:44,sub:0, detune:0, pwm:50,attack:0, release:6,slide:20,lfoRate:50,lfoDepth:0}},
+  /* --- v6.4: neue Instrumente, rein parametrisch. lt = LFO-Ziel (5 = Tremolo/VCA). --- */
+  {n:'TREMOLO',     w:1,d:0,lt:5,u:{tune:0, cutoff:50,reso:30,env:26,decay:74,accent:44,dist:8, tone:56,level:58,body:58,squelch:0, sub:18,detune:14,pwm:46,attack:18,release:58,slide:50,lfoRate:52,lfoDepth:68}},
+  {n:'TREM PAD',    w:3,d:0,lt:5,u:{tune:0, cutoff:40,reso:20,env:22,decay:86,accent:36,dist:4, tone:46,level:54,body:66,squelch:0, sub:28,detune:50,pwm:50,attack:46,release:80,slide:60,lfoRate:34,lfoDepth:54}},
+  {n:'NORTHLEAD II',w:3,d:0,lt:1,u:{tune:12,cutoff:66,reso:44,env:48,decay:62,accent:58,dist:14,tone:70,level:56,body:36,squelch:8, sub:12,detune:72,pwm:50,attack:6, release:30,slide:48,lfoRate:44,lfoDepth:9}},
+  {n:'NL2 HOOVER',  w:4,d:1,lt:1,u:{tune:0, cutoff:54,reso:58,env:66,decay:58,accent:72,dist:34,tone:62,level:56,body:48,squelch:30,sub:30,detune:80,pwm:50,attack:4, release:22,slide:70,lfoRate:26,lfoDepth:16}}
 ];
 let vbChar='';
 function applyVbChar(name,store){
   var c=VBCHARS.find(function(x){return x.n===name}); if(!c)return;
   Object.keys(c.u).forEach(function(k){ if(k in vpB) vpB[k]=c.u[k]; });
-  vpB.wave=c.w; vpB.dirty=c.d; vpB.lfoTarget=vpB.lfoTarget||0;
+  vpB.wave=c.w; vpB.dirty=c.d; vpB.lfoTarget=(c.lt|0);
   vbChar=name;
   if(ctx&&ready)pushAllB();
   /* Steht der Fokus auf B, sollen die Regler den neuen Klang auch zeigen. */
   if(vbFocus===1){ Object.keys(c.u).forEach(function(k){ if(k in UI) UI[k]=c.u[k]; });
-    wave=c.w; dirty=c.d;
+    wave=c.w; dirty=c.d; lfoTarget=(c.lt|0); setSegState('lfoTarget','lt',lfoTarget);
     document.querySelectorAll('.knob').forEach(setKnob);
     document.querySelectorAll('#wave button').forEach(function(x){x.classList.toggle('on',+x.dataset.w===wave)});
     document.querySelectorAll('#dirty button').forEach(function(x){x.classList.toggle('on',+x.dataset.d===dirty)});
@@ -1653,15 +1672,18 @@ async function start(){
   running=true; curStep=0; arpIdx=0; nextTime=ctx.currentTime+0.08;
   panic(); panic2(); setVbGain();
   clearInterval(timer); scheduler(); timer=setInterval(scheduler,SCHED_TICK_MS);
-  const b=document.getElementById('play'); b.classList.add('on'); b.textContent='■ STOP';
+  const b=document.getElementById('play'); b.classList.add('on'); b.textContent='■ STOP'; syncPlayTop();
 }
 function stop(){
   running=false; clearInterval(timer); timer=null;
   panic(); panic2();
-  const b=document.getElementById('play'); b.classList.remove('on'); b.textContent='▶ START';
+  const b=document.getElementById('play'); b.classList.remove('on'); b.textContent='▶ START'; syncPlayTop();
   document.querySelectorAll('.st').forEach(el=>el.classList.remove('cur'));
 }
 document.getElementById('play').addEventListener('click',()=>running?stop():start());
+/* Transport-Mirror oben in der Core-Row (nur mobil sichtbar, spiegelt #play 1:1) */
+function syncPlayTop(){var a=document.getElementById('play'),t=document.getElementById('playTop');if(!a||!t)return;t.textContent=a.textContent;t.classList.toggle('on',a.classList.contains('on'));}
+(function(){var t=document.getElementById('playTop');if(t){t.addEventListener('click',function(){running?stop():start();});syncPlayTop();}})();
 
 /* ---------- ACIDRATCHET FX BRIDGE ---------- */
 function fxEl(id){return document.getElementById(id)}
